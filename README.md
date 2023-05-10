@@ -7,7 +7,7 @@ install byteShard schema
 #### Create/migrate database
 Make sure your database connection is entered in the /config.php file in the root directory.
 
-Then call `./vendor/bin/migrate` to execute the migration.
+Then call `./vendor/bin/database` to execute the migration.
 
 
 ## Development
