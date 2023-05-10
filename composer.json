@@ -1,0 +1,31 @@
+{
+  "name": "byteshard/schema",
+  "description": "byteShard PHP schema",
+  "minimum-stability": "stable",
+  "license": "MPL-2.0",
+  "authors": [
+    {
+      "name": "Lars Hennig"
+    }
+  ],
+  "bin": [
+    "src/bin/database"
+  ],
+  "autoload": {
+    "psr-4": {
+      "byteShard\\": "src/byteShard"
+    }
+  },
+  "require-dev": {
+    "composer/composer": "^2.5",
+    "byteshard/core": "^1.0",
+    "phpstan/phpstan": "^1.9"
+  },
+  "require": {
+    "php": "^8.1",
+    "ext-pdo": "*",
+    "ext-mysqli": "*",
+    "symfony/console": "^6.2",
+    "byteshard/enum": "^1.0"
+  }
+}

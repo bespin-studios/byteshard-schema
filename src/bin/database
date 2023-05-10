@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+/**
+ * @copyright  Copyright (c) 2009 Bespin Studios GmbH
+ * @license    See LICENSE file that is distributed with this source code
+ */
+
+use byteShard\Internal\Database\Console\Command\AddOrUpdateAdminUser;
+use byteShard\Internal\Database\Console\Command\Migrate;
+use Symfony\Component\Console\Application;
+
+$setup = true;
+/**
+ * in the composer.json "extra" > "public-path" could be set to another path than public, but didn't find any way to reflect that here as well.
+ * We need to go up from vendor/bespin/byteShard/src/bin/
+ */
+require_once __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'config.php';
+require_once BS_FILE_BOOTSTRAP_APP;
+
+
+$database = new Application();
+$database->add(new Migrate());
+$database->add(new AddOrUpdateAdminUser());
+$database->run();
