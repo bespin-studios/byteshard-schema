@@ -19,7 +19,7 @@ class Column
     private null|string|int $default;
     private bool            $identity;
     private bool            $isNullable;
-    private ?int            $length;
+    private null|int|string $length;
     private string          $name;
     private string          $newName = '';
     private bool            $primary;
@@ -29,7 +29,7 @@ class Column
     /**
      * @throws Exception
      */
-    public function __construct(string $name, string $type = Enum\DB\ColumnType::INT, int $length = null, bool $is_nullable = null, bool $primary = false, bool $identity = false, string|int $default = null)
+    public function __construct(string $name, string $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $is_nullable = null, bool $primary = false, bool $identity = false, string|int $default = null)
     {
         if (Enum\DB\ColumnType::is_enum($type)) {
             $this->type = $type;
@@ -62,7 +62,7 @@ class Column
         return $this->default;
     }
 
-    public function getLength(): ?int
+    public function getLength(): null|int|string
     {
         return $this->length;
     }
