@@ -51,7 +51,7 @@ class DBManagement implements DBManagementInterface
         }
     }
 
-    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, int $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
+    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
     {
         return new Column(strtolower($name), $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }

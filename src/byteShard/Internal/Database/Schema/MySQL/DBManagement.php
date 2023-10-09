@@ -59,7 +59,7 @@ class DBManagement implements DBManagementInterface
      * @param string $name
      * @param string $newName
      * @param string $type
-     * @param int|null $length
+     * @param null|int|string $length
      * @param bool $isNullable
      * @param bool $primary
      * @param bool $identity
@@ -68,7 +68,7 @@ class DBManagement implements DBManagementInterface
      * @return ColumnManagementInterface
      * @throws Exception
      */
-    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, int $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
+    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
     {
         return new Column($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
