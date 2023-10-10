@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/byteshard/schema/compare/v1.1.1...v1.2.0) (2023-10-10)
+
+
+### Features
+
+* add grants to mysql schema ([207b48a](https://github.com/byteshard/schema/commit/207b48ae42933103a77ea4c14f5f40675e397fb5))
+* add return type documentation and add getGrants to interface ([7e12257](https://github.com/byteshard/schema/commit/7e1225774a376a7ba156b2c4e49b51ee91e26c8c))
+
 ## [1.1.1](https://github.com/byteshard/schema/compare/v1.1.0...v1.1.1) (2023-10-10)
 
 
