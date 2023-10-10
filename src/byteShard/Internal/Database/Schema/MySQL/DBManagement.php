@@ -268,7 +268,7 @@ class DBManagement implements DBManagementInterface
 
     /**
      * @param TableManagementInterface $table
-     * @return array<string,Grants>
+     * @return array<int|string,Grants>
      * @throws Exception
      */
     public function getGrants(TableManagementInterface $table): array
