@@ -7,17 +7,14 @@
 namespace byteShard\Internal\Database\Schema\MySQL;
 
 use byteShard\Enum;
-use byteShard\Exception;
+use byteShard\Internal\Database\Schema\ColumnArguments;
 use byteShard\Internal\Database\Schema\ColumnParent;
 
 class Column extends ColumnParent
 {
     private string $collate = 'utf8mb4_unicode_ci';
 
-    /**
-     * @throws Exception
-     */
-    public function __construct(string $name, string $newName = '', string $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
     {
         // Database specific transformations and default values
         switch ($type) {
@@ -77,110 +74,100 @@ class Column extends ColumnParent
         return 'DROP COLUMN `'.$this->getName().'`';
     }
 
-    public function getSchema(int $length = 0): string
+    public function getSchema(): string
     {
-        $optionalLength   = false;
-        $optionalNullable = false;
-        $length           = $length - strlen($this->getName());
-        $schema           = '    new Column('."'".$this->getName()."'".str_repeat(' ', $length).',';
+        $properties[ColumnArguments::NAME->value] = '\''.$this->getName().'\'';
         switch ($this->getType()) {
             case Enum\DB\ColumnType::BIGINT:
-                $schema .= 'Enum\DB\ColumnType::BIGINT';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::BIGINT';
                 break;
             case Enum\DB\ColumnType::INT:
-                $schema .= 'Enum\DB\ColumnType::INT';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::INT';
                 break;
             case Enum\DB\ColumnType::TINYINT:
-                $schema .= 'Enum\DB\ColumnType::TINYINT';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
                 break;
             case Enum\DB\ColumnType::BOOL:
             case Enum\DB\ColumnType::BOOLEAN:
-                $schema .= 'Enum\DB\ColumnType::BOOL';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::BOOL';
                 break;
             case Enum\DB\ColumnType::VARCHAR:
-                $schema .= 'Enum\DB\ColumnType::VARCHAR, ';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::VARCHAR';
                 if ($this->getLength() === 'MAX' || $this->getLength() === -1) {
-                    $schema .= "'MAX'";
+                    $properties[ColumnArguments::LENGTH->value] = "'MAX'";
                 } else {
-                    $schema .= $this->getLength();
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
                 }
-                $optionalLength = true;
                 break;
             case Enum\DB\ColumnType::NCHAR:
-                $schema .= 'Enum\DB\ColumnType::NCHAR, ';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::NCHAR';
                 if ($this->getLength() === 'MAX') {
-                    $schema .= "'MAX'";
+                    $properties[ColumnArguments::LENGTH->value] = "'MAX'";
                 } else {
-                    $schema .= $this->getLength();
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
                 }
-                $optionalLength = true;
                 break;
             case Enum\DB\ColumnType::DATETIME:
-                $schema .= 'Enum\DB\ColumnType::DATETIME';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::DATETIME';
                 if (!empty($this->getLength())) {
-                    $schema         .= ', '.$this->getLength();
-                    $optionalLength = true;
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
                 }
                 break;
             case Enum\DB\ColumnType::DATETIME2:
-                $schema .= 'Enum\DB\ColumnType::DATETIME2';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::DATETIME2';
                 if (!empty($this->getLength())) {
-                    $schema         .= ', '.$this->getLength();
-                    $optionalLength = true;
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
                 }
                 break;
             case Enum\DB\ColumnType::CHAR:
-                $schema .= 'Enum\DB\ColumnType::CHAR, ';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::CHAR';
                 if ($this->getLength() === 'MAX' || $this->getLength() === -1) {
-                    $schema .= "'MAX'";
+                    $properties[ColumnArguments::LENGTH->value] = "'MAX'";
                 } else {
-                    $schema .= $this->getLength();
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
                 }
-                $optionalLength = true;
                 break;
             case Enum\DB\ColumnType::DATE:
-                $schema .= 'Enum\DB\ColumnType::DATE';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::DATE';
                 if (!empty($this->getLength())) {
-                    $schema         .= ', '.$this->getLength();
-                    $optionalLength = true;
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
                 }
                 break;
             case Enum\DB\ColumnType::FLOAT:
-                $schema .= 'Enum\DB\ColumnType::FLOAT';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::FLOAT';
                 break;
             case Enum\DB\ColumnType::BLOB:
-                $schema .= 'Enum\DB\ColumnType::BLOB';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::BLOB';
                 break;
             case Enum\DB\ColumnType::DECIMAL:
-                $schema         .= 'Enum\DB\ColumnType::DECIMAL, \''.$this->getLength().'\'';
-                $optionalLength = true;
+                $properties[ColumnArguments::TYPE->value]   = 'ColumnType::DECIMAL';
+                $properties[ColumnArguments::LENGTH->value] = '\''.$this->getLength().'\'';
                 break;
             case Enum\DB\ColumnType::TIME:
-                $schema .= 'Enum\DB\ColumnType::TIME';
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::TIME';
                 break;
             default:
-                print 'Unknown Column Type in '.get_class($this).': '.$this->getType().' (11100001)';
+                print 'Unknown Column Type in '.get_class($this).': '.$this->getType()->value.' (11100001)';
                 exit;
         }
-        if ($this->isNullable() === false) {
-            if ($optionalLength === false) {
-                $optionalLength = true;
-                $schema         .= ',null';
+        // because we don't want to break existing schema uses, we have to implement the same defaults as in the Schema\Column
+        if ($this->getType()->isNumeric()) {
+            if ($this->isNullable() === true) {
+                $properties[ColumnArguments::NULLABLE->value] = 'true';
             }
-            $optionalNullable = true;
-            $schema           .= ',false';
+        } elseif ($this->isNullable() === false) {
+            $properties[ColumnArguments::NULLABLE->value] = 'false';
         }
         if ($this->isPrimary() === true) {
-            if ($optionalNullable === false) {
-                if ($optionalLength === false) {
-                    $schema .= ',null';
-                }
-                $schema .= ',true';
-            }
-            $schema .= ',true';
+            $properties[ColumnArguments::PRIMARY->value] = 'true';
         }
-        $schema .= '),';
-        return $schema;
+        if ($this->isIdentity() === true) {
+            $properties[ColumnArguments::IDENTITY->value] = 'true';
+        }
+        array_walk($properties, function (&$value, $key) {
+            $value = $key.': '.$value;
+        });
+        return 'new Column('.implode(', ', $properties).')';
     }
 
     public function getUpdateColumnStatement(): string
@@ -188,7 +175,7 @@ class Column extends ColumnParent
         return 'CHANGE `'.$this->getName().'` '.$this->getColumnDefinition();
     }
 
-    private function getColumnCollate(string $type): string
+    private function getColumnCollate(Enum\DB\ColumnType $type): string
     {
         switch ($type) {
             case Enum\DB\ColumnType::CHAR:
@@ -250,12 +237,12 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::UNSIGNED_SMALLINT:
             case Enum\DB\ColumnType::UNSIGNED_TINYINT:
             default:
-                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType().' (11100002)';
+                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType()->value.' (11100002)';
                 return '';
         }
     }
 
-    private function getColumnLength(string $type): string
+    private function getColumnLength(Enum\DB\ColumnType $type): string
     {
         switch ($type) {
             case Enum\DB\ColumnType::YEAR:
@@ -325,12 +312,12 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::UNSIGNED_SMALLINT:
             case Enum\DB\ColumnType::UNSIGNED_TINYINT:
             default:
-                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType().' (11100003)';
+                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType()->value.' (11100003)';
                 return '';
         }
     }
 
-    private function getColumnType(string $type): string
+    private function getColumnType(Enum\DB\ColumnType $type): string
     {
         switch ($type) {
             case Enum\DB\ColumnType::BOOLEAN:
@@ -426,7 +413,7 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::UNSIGNED_SMALLINT:
             case Enum\DB\ColumnType::UNSIGNED_TINYINT:
             default:
-                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType().' (11100004)';
+                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType()->value.' (11100004)';
                 return '';
         }
     }

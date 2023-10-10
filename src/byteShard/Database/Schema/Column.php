@@ -7,7 +7,6 @@
 namespace byteShard\Database\Schema;
 
 use byteShard\Enum;
-use byteShard\Exception;
 
 /**
  * Class Column
@@ -15,35 +14,28 @@ use byteShard\Exception;
  */
 class Column
 {
-    private string          $comment = '';
-    private null|string|int $default;
-    private bool            $identity;
-    private bool            $isNullable;
-    private null|int|string $length;
-    private string          $name;
-    private string          $newName = '';
-    private bool            $primary;
-    private string          $type;
-    private ?string         $collate = null;
+    private string             $comment = '';
+    private null|string|int    $default;
+    private bool               $identity;
+    private bool               $isNullable;
+    private null|int|string    $length;
+    private string             $name;
+    private string             $newName = '';
+    private bool               $primary;
+    private Enum\DB\ColumnType $type;
+    private ?string            $collate = null;
 
-    /**
-     * @throws Exception
-     */
-    public function __construct(string $name, string $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $is_nullable = null, bool $primary = false, bool $identity = false, string|int $default = null)
+    public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $nullable = null, bool $primary = false, bool $identity = false, string|int $default = null)
     {
-        if (Enum\DB\ColumnType::is_enum($type)) {
-            $this->type = $type;
-        } else {
-            throw new Exception(__METHOD__.": Method only accepts enums of type Enum\\DB\\ColumnType. Input was '".gettype($type)."'");
-        }
-        if ($is_nullable === null) {
+        $this->type = $type;
+        if ($nullable === null) {
             if (Enum\DB\ColumnType::is_numeric($type)) {
                 $this->isNullable = false;
             } else {
                 $this->isNullable = true;
             }
         } else {
-            $this->isNullable = $is_nullable;
+            $this->isNullable = $nullable;
         }
         $this->name     = $name;
         $this->length   = $length;
@@ -80,7 +72,7 @@ class Column
         return $this->newName;
     }
 
-    public function getType(): string
+    public function getType(): Enum\DB\ColumnType
     {
         return $this->type;
     }

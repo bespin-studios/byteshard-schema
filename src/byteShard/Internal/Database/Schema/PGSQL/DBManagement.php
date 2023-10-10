@@ -15,6 +15,7 @@ use byteShard\Internal\Database\Schema\DBManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
+use PDO;
 use PDOException;
 
 class DBManagement implements DBManagementInterface
@@ -22,7 +23,6 @@ class DBManagement implements DBManagementInterface
     private BaseConnection $connection;
     private string         $database;
     private string         $dbSchemaTable   = 'bs_schema';
-    private string         $dbSchemaId      = 'id';
     private string         $dbSchemaType    = 'type';
     private string         $dbSchemaValue   = 'value';
     private string         $dbSchemaVersion = 'version';
@@ -51,7 +51,7 @@ class DBManagement implements DBManagementInterface
         }
     }
 
-    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
+    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
     {
         return new Column(strtolower($name), $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
@@ -232,9 +232,6 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return $indices;
     }
 
-    /**
-     * @throws Exception
-     */
     public function getIndexObject(string $tableName, string $indexName, string ...$columns): Index
     {
         $columnObjects = [];
@@ -258,8 +255,8 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
                     FROM information_schema.table_constraints AS tc
                     JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name
                     JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name
-                    WHERE constraint_type =:contraint_type  and tc.table_name =:table_name and kcu.table_schema=:table_schema ';
-        $fields = ['contraint_type' => 'FOREIGN KEY', 'table_name' => $table->getName(), 'table_schema' => $this->tableSchema];
+                    WHERE constraint_type =:constraint_type  and tc.table_name =:table_name and kcu.table_schema=:table_schema ';
+        $fields = ['constraint_type' => 'FOREIGN KEY', 'table_name' => $table->getName(), 'table_schema' => $this->tableSchema];
 
         $tmp = Database::getArray($query, $fields);
         if (!empty($tmp)) {
@@ -336,9 +333,8 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
      * @return array<TableManagementInterface>
      * @throws Exception
      */
-    public function getTables(): array
+    public function getTables(bool $sorted = false): array
     {
-        $schemaExist = ' SELECT schema_name FROM information_schema.schemata WHERE schema_name = '.$this->tableSchema;
         $query       = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :table_schema ';
         $records     = Database::getArray($query, ['table_schema' => $this->tableSchema]);
         $tables      = [];
@@ -348,6 +344,9 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return $tables;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getVersion(string $type = 'bs_schema', string $value = 'version_identifier', string|null $initialVersion = 'v0.0.0'): null|string
     {
         if ($this->tableExists($this->dbSchemaTable) === false) {
@@ -396,7 +395,7 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
             if ($schemaExist === null) {
                 try {
                     $tempConnection = $this->connection->getConnection();
-                    if ($tempConnection instanceof \PDO) {
+                    if ($tempConnection instanceof PDO) {
                         $stmt = $tempConnection->prepare('CREATE SCHEMA '.$this->tableSchema);
                         $stmt->execute();
                     }
@@ -431,7 +430,6 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
     public function setSchemaParameters(array $parameters): static
     {
         $this->dbSchemaTable   = $parameters['db_schema_table'];
-        $this->dbSchemaId      = $parameters['db_schema_id'];
         $this->dbSchemaType    = $parameters['db_schema_type'];
         $this->dbSchemaValue   = $parameters['db_schema_value'];
         $this->dbSchemaVersion = $parameters['db_schema_version'];

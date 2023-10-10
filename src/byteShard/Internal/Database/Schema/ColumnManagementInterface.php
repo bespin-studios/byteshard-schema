@@ -6,6 +6,8 @@
 
 namespace byteShard\Internal\Database\Schema;
 
+use byteShard\Enum\DB\ColumnType;
+
 interface ColumnManagementInterface
 {
     public function __toString(): string;
@@ -24,7 +26,7 @@ interface ColumnManagementInterface
 
     public function getNewName(): string;
 
-    public function getType(): string;
+    public function getType(): ColumnType;
 
     public function getUpdateColumnStatement(): string;
 
@@ -36,7 +38,7 @@ interface ColumnManagementInterface
 
     public function isPrimary(): bool;
 
-    public function getSchema(int $length): string;
+    public function getSchema(): string;
 
     public function getCollate(): string;
 

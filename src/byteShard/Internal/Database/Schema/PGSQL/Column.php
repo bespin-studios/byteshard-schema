@@ -7,14 +7,13 @@
 namespace byteShard\Internal\Database\Schema\PGSQL;
 
 use byteShard\Enum;
-use byteShard\Exception;
 use byteShard\Internal\Database\Schema\ColumnParent;
 
 class Column extends ColumnParent
 {
     private string $collate = 'en_US.utf8';
 
-    public function __construct(string $name, string $newName = '', string $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
     {
         switch ($type) {
             case Enum\DB\ColumnType::SMALLINT:
@@ -183,7 +182,7 @@ class Column extends ColumnParent
                 $schema .= 'Enum\DB\ColumnType::TIME';
                 break;
             default:
-                print 'Unknown Column Type in '.get_class($this).': '.$this->getType();
+                print 'Unknown Column Type in '.get_class($this).': '.$this->getType()->value;
                 exit;
         }
         if ($this->isNullable() === false) {
@@ -258,7 +257,7 @@ class Column extends ColumnParent
         }
     }
 
-    private function getColumnLength(string $type): ?string
+    private function getColumnLength(Enum\DB\ColumnType $type): ?string
     {
         switch ($type) {
             case Enum\DB\ColumnType::TIME:
@@ -300,13 +299,13 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::TSVECTOR:
                 return '';
             default:
-                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType();
+                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType()->value;
                 return '';
         }
         return null;
     }
 
-    private function getColumnType(string $type): string
+    private function getColumnType(Enum\DB\ColumnType $type): string
     {
         switch ($type) {
             case Enum\DB\ColumnType::BOOLEAN:
@@ -371,7 +370,7 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::TSVECTOR:
                 return 'tsvector';
             default:
-                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType();
+                print 'Unknown Column Type in '.__METHOD__.': '.$this->getType()->value;
                 return '';
         }
     }

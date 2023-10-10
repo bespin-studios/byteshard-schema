@@ -11,7 +11,6 @@ use byteShard\Database\Schema\Column;
 use byteShard\Database\Schema\State;
 use byteShard\Database\Schema\Table;
 use byteShard\Enum;
-use byteShard\Exception;
 use byteShard\Internal\Schema\DB\UserTable;
 
 class BaseSchema
@@ -42,7 +41,6 @@ class BaseSchema
     /**
      * @param State $state
      * @param string $version
-     * @throws Exception
      */
     public function getBaseSchema(State $state, string $version): void
     {
@@ -51,7 +49,7 @@ class BaseSchema
                 $state->addTable(
                     new Table(
                         $this->dbSchemaTable,
-                        new Column($this->dbSchemaId, Enum\DB\ColumnType::INT, null, false, true, true),
+                        new Column(name: $this->dbSchemaId, type: Enum\DB\ColumnType::INT, nullable:false, primary:true, identity: true),
                         new Column($this->dbSchemaType, Enum\DB\ColumnType::VARCHAR, 256),
                         new Column($this->dbSchemaValue, Enum\DB\ColumnType::VARCHAR, 256),
                         new Column($this->dbSchemaVersion, Enum\DB\ColumnType::VARCHAR, 256),
@@ -71,8 +69,8 @@ class BaseSchema
                 );
 
                 // User Table
-                $userTable[] = new Column($this->userTableSchema->getFieldNameUserId(), $this->userTableSchema->getFieldTypeUserId(), $this->userTableSchema->getFieldTypeUserId() === Enum\DB\ColumnType::VARCHAR ? 256 : null, false, true, true);
-                $userTable[] = new Column($this->userTableSchema->getFieldNameUsername(), $this->userTableSchema->getFieldTypeUsername(), $this->userTableSchema->getFieldTypeUsername() === Enum\DB\ColumnType::VARCHAR ? 256 : null, true);
+                $userTable[] = new Column($this->userTableSchema->getFieldNameUserId(), $this->userTableSchema->getFieldTypeUserIdEnum(), $this->userTableSchema->getFieldTypeUserIdEnum() === Enum\DB\ColumnType::VARCHAR ? 256 : null, false, true, true);
+                $userTable[] = new Column($this->userTableSchema->getFieldNameUsername(), $this->userTableSchema->getFieldTypeUsernameEnum(), $this->userTableSchema->getFieldTypeUsernameEnum() === Enum\DB\ColumnType::VARCHAR ? 256 : null, true);
                 if ($this->userTableSchema->getFieldNameAccessControlTarget() !== '') {
                     $userTable[] = new Column($this->userTableSchema->getFieldNameAccessControlTarget(), Enum\DB\ColumnType::VARCHAR, 8, false);
                 }

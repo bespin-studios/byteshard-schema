@@ -12,7 +12,6 @@ use byteShard\Exception;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
-use byteShard\Permission\ObjectArray;
 
 class StateManagement extends \byteShard\Internal\Database\Schema\StateManagement
 {
@@ -255,19 +254,14 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
             $schema[] = '$'.str_replace('_', '', lcfirst(ucwords($table->getName(), '_'))).' = new Table('."'".$table->getName()."',";
             $columns  = $this->dbManagement->getColumns($table);
             if (!empty($columns)) {
-                $col    = '';
-                $length = 0;
-                foreach ($columns as $column) {
-                    $length = max($length, strlen($column));
-                }
-                // code updated to remove last komma from the printSchema statement
+                // code updated to remove last comma from the printSchema statement
                 $totalColumns = count($columns);
                 foreach ($columns as $column) {
                     /**@var ColumnManagementInterface $column */
                     if ($totalColumns === 1) {
-                        $res = substr($column->getSchema($length), 0, -1).");\n";
+                        $res = substr($column->getSchema(), 0, -1).");\n";
                     } else {
-                        $res = $column->getSchema($length);
+                        $res = $column->getSchema();
                     }
                     $schema[]     = $res;
                     $totalColumns -= 1;

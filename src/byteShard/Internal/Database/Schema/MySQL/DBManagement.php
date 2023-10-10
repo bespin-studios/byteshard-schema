@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection SqlNoDataSourceInspection */
 /**
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
@@ -17,13 +17,15 @@ use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
+use mysqli;
+use PDO;
+use stdClass;
 
 class DBManagement implements DBManagementInterface
 {
     private BaseConnection $connection;
     private string         $database;
     private string         $dbSchemaTable   = 'bs_schema';
-    private string         $dbSchemaId      = 'id';
     private string         $dbSchemaType    = 'type';
     private string         $dbSchemaValue   = 'value';
     private string         $dbSchemaVersion = 'version';
@@ -55,20 +57,7 @@ class DBManagement implements DBManagementInterface
         }
     }
 
-    /**
-     * @param string $name
-     * @param string $newName
-     * @param string $type
-     * @param null|int|string $length
-     * @param bool $isNullable
-     * @param bool $primary
-     * @param bool $identity
-     * @param string|int|null $default
-     * @param string $comment
-     * @return ColumnManagementInterface
-     * @throws Exception
-     */
-    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
+    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
     {
         return new Column($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
@@ -274,9 +263,6 @@ class DBManagement implements DBManagementInterface
         return $indices;
     }
 
-    /**
-     * @throws Exception
-     */
     public function getIndexObject(string $tableName, string $indexName, string ...$columns): IndexManagementInterface
     {
         $columnObjects = [];
@@ -348,7 +334,7 @@ class DBManagement implements DBManagementInterface
      * @return array<TableManagementInterface>
      * @throws Exception
      */
-    public function getTables(): array
+    public function getTables(bool $sorted = false): array
     {
         $tables        = [];
         $newConnection = $this->connection->getConnection(true);
@@ -358,6 +344,36 @@ class DBManagement implements DBManagementInterface
             foreach ($records as $record) {
                 $tables[] = new Table($record->TABLE_NAME);
             }
+        }
+        foreach ($tables as $table) {
+            $tableIndices = Database::getArray('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' AND NOT CONSTRAINT_NAME=\'PRIMARY\' AND REFERENCED_TABLE_NAME IS NULL');
+            foreach ($tableIndices as $tableIndex) {
+                $indexRecords = Database::getArray('SHOW INDEXES FROM '.$table->getName().' WHERE Key_name=\''.$tableIndex->CONSTRAINT_NAME.'\'');
+                $indices      = [];
+                foreach ($indexRecords as $index) {
+                    if (!array_key_exists($index->Key_name, $indices)) {
+                        $indices[$index->Key_name]         = new stdClass();
+                        $indices[$index->Key_name]->Unique = $index->Non_unique === '1';
+                    }
+                    $indices[$index->Key_name]->IndexName                     = $index->Key_name;
+                    $indices[$index->Key_name]->Columns[$index->Seq_in_index] = new Column($index->Column_name);
+                }
+                if (!empty($indices)) {
+                    foreach ($indices as $index) {
+                        ksort($index->Columns);
+                        $indexObject = new Index($index->IndexName, ...$index->Columns);
+                        if ($index->Unique === true) {
+                            $indexObject->setUnique();
+                        }
+                        $table->setIndices($indexObject);
+                    }
+                }
+            }
+        }
+        if ($sorted === true) {
+            usort($tables, function(TableManagementInterface $a, TableManagementInterface $b): int {
+                return strcmp($a->getName(), $b->getName());
+            });
         }
         return $tables;
     }
@@ -398,7 +414,7 @@ class DBManagement implements DBManagementInterface
                 $this->connection = $newConnection;
             }
             return $newConnection instanceof BaseConnection;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return false;
         }
     }
@@ -412,7 +428,7 @@ class DBManagement implements DBManagementInterface
         if ($dbExist === null) {
             try {
                 $this->connection->execute('CREATE DATABASE '.$this->database);
-            } catch (\Exception $e) {
+            } catch (\Exception) {
                 return false;
             }
         }
@@ -441,7 +457,6 @@ class DBManagement implements DBManagementInterface
     public function setSchemaParameters(array $parameters): static
     {
         $this->dbSchemaTable   = $parameters['db_schema_table'];
-        $this->dbSchemaId      = $parameters['db_schema_id'];
         $this->dbSchemaType    = $parameters['db_schema_type'];
         $this->dbSchemaValue   = $parameters['db_schema_value'];
         $this->dbSchemaVersion = $parameters['db_schema_version'];
@@ -459,12 +474,13 @@ class DBManagement implements DBManagementInterface
             $update     = false;
             $params     = [$this->dbSchemaVersion => $version, $this->dbSchemaDone => true, $this->dbSchemaType => $type, $this->dbSchemaValue => $value];
             if ($this->getVersion($type, $value, null) === null) {
+                /** @noinspection SqlResolve */
                 $query = 'INSERT INTO `'.$this->dbSchemaTable.'` (`'.implode('`, `', array_keys($params)).'`) VALUES (?, ? ,?, ?)';
             } else {
                 $query  = 'UPDATE `'.$this->dbSchemaTable.'` SET `'.$this->dbSchemaVersion.'`=?, `'.$this->dbSchemaDone.'`=? WHERE `'.$this->dbSchemaType.'`=? AND `'.$this->dbSchemaValue.'`=?';
                 $update = true;
             }
-            if ($connection instanceof \PDO) {
+            if ($connection instanceof PDO) {
                 // transform index to named parameters
                 foreach ($params as $key => $param) {
                     $position = strpos($query, '?');
@@ -477,7 +493,7 @@ class DBManagement implements DBManagementInterface
                 } else {
                     Database::insert($query, $params);
                 }
-            } elseif ($connection instanceof \mysqli) {
+            } elseif ($connection instanceof mysqli) {
                 $statement = $connection->prepare($query);
                 if ($statement !== false) {
                     $statement->bind_param(...$this->getBindArguments($params));

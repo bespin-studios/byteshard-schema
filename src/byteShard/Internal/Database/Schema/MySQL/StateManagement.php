@@ -133,9 +133,9 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                 if ($currentColumn->isNotIdenticalTo($targetColumn)) {
                     if (
                         (($targetColumn->isIdentity() === true && $currentColumn->isIdentity() === true) ||
-                         ($targetColumn->isIdentity() === false && $currentColumn->isIdentity() === false)) &&
+                            ($targetColumn->isIdentity() === false && $currentColumn->isIdentity() === false)) &&
                         (($targetColumn->isPrimary() === true && $currentColumn->isPrimary() === true) ||
-                         ($targetColumn->isPrimary() === false && $currentColumn->isPrimary() === false))
+                            ($targetColumn->isPrimary() === false && $currentColumn->isPrimary() === false))
                     ) {
                         $statements = $table->getUpdateColumnStatements($targetColumn);
                         foreach ($statements as $statement) {
@@ -200,25 +200,66 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
 
     public function getSchema(): array
     {
-        $tables = $this->dbManagement->getTables();
+        $tables = $this->dbManagement->getTables(true);
         $schema = [];
         foreach ($tables as $table) {
-            $schema[] = '$'.str_replace('_', '', lcfirst(ucwords($table->getName(), '_'))).' = new Table('."'".$table->getName()."',";
-            $columns  = $this->dbManagement->getColumns($table);
-            if (!empty($columns)) {
-                $length = 0;
-                foreach ($columns as $column) {
-                    $length = max($length, strlen($column));
+            $tableName = $this->getVariableNameForSchema($table->getName());
+            array_push($schema, ...$this->getTableSchema($table, $tableName));
+            array_push($schema, ...$this->getTableIndices($table, $tableName));
+        }
+        return $schema;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getTableSchema(TableManagementInterface $table, string $tableName): array
+    {
+        $schema[] = '$'.$tableName.' = new Table('."'".$table->getName()."',";
+        $columns  = $this->dbManagement->getColumns($table);
+        if (!empty($columns)) {
+            $columnDefinitions = [];
+            foreach ($columns as $column) {
+                $columnName = $this->getVariableNameForSchema($column->getName());
+                $columnDefinitions[$columnName] = $column->getSchema();
+            }
+            $maxLengthColumnName = 0;
+            foreach ($columnDefinitions as $columnName => $columnDefinition) {
+                $maxLengthColumnName = max($maxLengthColumnName, strlen($columnName));
+            }
+            foreach ($columnDefinitions as $columnName => $columnDefinition) {
+                $schema[] = '   $'.$tableName.'_'.$columnName.(str_repeat(' ', $maxLengthColumnName - strlen($columnName))).' = '.$columnDefinition.',';
+            }
+            $schema[] = ');';
+        }
+        return $schema;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getTableIndices(TableManagementInterface $table, string $tableName): array
+    {
+        $schema = [];
+        $indices = $table->getIndices();
+        if (!empty($indices)) {
+            foreach ($indices as $index) {
+                $columns = [];
+                foreach ($index->getIndexColumns() as $indexColumn) {
+                    $columns[] = '$'.$tableName.'_'.$this->getVariableNameForSchema($indexColumn);
                 }
-                foreach ($columns as $column) {
-                    $schema[] = $column->getSchema($length);
+                $indexVariableName = '$'.$tableName.'_index_'.$this->getVariableNameForSchema($index->getName());
+                $schema[] = '$'.$tableName.'->setIndices('.$indexVariableName.' = new Index(\''.$index->getName().'\', '.implode($columns).'));';
+                if ($index->isUnique()) {
+                    $schema[] = $indexVariableName.'->setUnique()';
                 }
-                //$col = substr($col, 0, -2);
-                $col      = ');';
-                $schema[] = $col;
             }
         }
-
         return $schema;
+    }
+
+    private function getVariableNameForSchema(string $name): string
+    {
+        return str_replace('_', '', lcfirst(ucwords($name, '_')));
     }
 }

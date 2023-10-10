@@ -36,7 +36,7 @@ class Table extends TableParent
     {
         $orderedPrimaryKeyColumns[] = '`'.$addIdentityColumn->getName().'`';
         foreach ($primaryKeyColumns as $primaryKeyColumn) {
-            if ($primaryKeyColumn !== $addIdentityColumn->getName()) {
+            if ($primaryKeyColumn->getName() !== $addIdentityColumn->getName()) {
                 $orderedPrimaryKeyColumns[] = '`'.$primaryKeyColumn.'`';
             }
         }
@@ -121,7 +121,7 @@ class Table extends TableParent
     {
         $orderedPrimaryKeyColumns[] = '`'.$targetIdentityColumn->getName().'`';
         foreach ($primaryKeyColumns as $primaryKeyColumn) {
-            if ($primaryKeyColumn !== $targetIdentityColumn->getName()) {
+            if ($primaryKeyColumn->getName() !== $targetIdentityColumn->getName()) {
                 $orderedPrimaryKeyColumns[] = '`'.$primaryKeyColumn.'`';
             }
         }

@@ -9,14 +9,10 @@ namespace byteShard\Database\Schema;
 class Index
 {
     private string $name;
-
-    /**
-     * @var array<string>
-     */
-    private array $columns = [];
-
-    private string $type   = '';
-    private bool   $unique = false;
+    /** @var array<string> */
+    private array  $columns = [];
+    private string $type    = '';
+    private bool   $unique  = false;
 
     public function __construct(string $name, Column ...$columns)
     {
@@ -31,9 +27,7 @@ class Index
         return $this->name;
     }
 
-    /**
-     * @return array<string>
-     */
+    /** @return array<string> */
     public function getColumns(): array
     {
         return $this->columns;
@@ -43,8 +37,8 @@ class Index
     {
         $this->type = $type;
         if (strtolower($type) === 'unique') {
-            trigger_error('for '.__METHOD__.' it is deprecated to set unqiue index. Use setUnique(true) instead.', E_USER_DEPRECATED);
-            $this->setUnique(true);
+            trigger_error('for '.__METHOD__.' it is deprecated to set unique index. Use setUnique(true) instead.', E_USER_DEPRECATED);
+            $this->setUnique();
         }
         return $this;
     }

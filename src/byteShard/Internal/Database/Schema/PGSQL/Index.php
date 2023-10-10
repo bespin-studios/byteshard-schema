@@ -12,7 +12,7 @@ use byteShard\Internal\Database\Schema\IndexParent;
 class Index extends IndexParent
 {
 
-    private string $tableName = '';
+    private string $tableName;
 
     public function __construct(string $tableName, string $indexName, ColumnManagementInterface ...$columns)
     {
