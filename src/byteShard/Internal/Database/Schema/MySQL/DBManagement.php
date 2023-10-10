@@ -265,6 +265,11 @@ class DBManagement implements DBManagementInterface
         return $indices;
     }
 
+    /**
+     * @param TableManagementInterface $table
+     * @return array<string,object>
+     * @throws Exception
+     */
     public function getGrants(TableManagementInterface $table): array
     {
         $tableGrants  = Database::getArray('SELECT GRANTEE, PRIVILEGE_TYPE FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY TABLE_NAME');

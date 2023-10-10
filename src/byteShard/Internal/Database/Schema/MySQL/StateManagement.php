@@ -266,6 +266,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
         return $schema;
     }
 
+    /** @return array<string> */
     private function getTableGrants(TableManagementInterface $table): array
     {
         $result = [];

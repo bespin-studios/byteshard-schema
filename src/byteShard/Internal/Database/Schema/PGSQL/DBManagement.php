@@ -532,4 +532,12 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         }
         return true;
     }
+
+    /**
+     * @return array<string,object>
+     */
+    public function getGrants(TableManagementInterface $table): array
+    {
+        return [];
+    }
 }
