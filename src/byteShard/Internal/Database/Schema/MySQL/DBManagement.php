@@ -17,6 +17,7 @@ use byteShard\Internal\Database\BaseRecordset;
 use byteShard\Internal\Database\Schema\DBManagementInterface;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
+use byteShard\Internal\Database\Schema\Grants;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
 use mysqli;
@@ -263,6 +264,31 @@ class DBManagement implements DBManagementInterface
             $newConnection->disconnect();
         }
         return $indices;
+    }
+
+    /**
+     * @param TableManagementInterface $table
+     * @return array<int|string,Grants>
+     * @throws Exception
+     */
+    public function getGrants(TableManagementInterface $table): array
+    {
+        $tableGrants  = Database::getArray('SELECT GRANTEE, PRIVILEGE_TYPE FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY TABLE_NAME');
+        $columnGrants = Database::getArray('SELECT GRANTEE, COLUMN_NAME, PRIVILEGE_TYPE FROM information_schema.COLUMN_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY PRIVILEGE_TYPE;');
+        $grants = [];
+        foreach ($tableGrants as $tableGrant) {
+            if (!array_key_exists($tableGrant->GRANTEE, $grants)) {
+                $grants[$tableGrant->GRANTEE] = new Grants();
+                $grants[$tableGrant->GRANTEE]->setGrantee($tableGrant->GRANTEE);
+            }
+            $grants[$tableGrant->GRANTEE]->addPrivilege($tableGrant->PRIVILEGE_TYPE);
+        }
+        foreach ($columnGrants as $columnGrant) {
+            if (array_key_exists($columnGrant->GRANTEE, $grants)) {
+                $grants[$columnGrant->GRANTEE]->addColumns($columnGrant->PRIVILEGE_TYPE, $columnGrant->COLUMN_NAME);
+            }
+        }
+        return $grants;
     }
 
     public function getIndexObject(string $tableName, string $indexName, string ...$columns): IndexManagementInterface
