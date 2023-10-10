@@ -249,7 +249,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                     $columns[] = '$'.$tableName.'_'.$this->getVariableNameForSchema($indexColumn);
                 }
                 $indexVariableName = '$'.$tableName.'_index_'.$this->getVariableNameForSchema($index->getName());
-                $schema[] = '$'.$tableName.'->setIndices('.$indexVariableName.' = new Index(\''.$index->getName().'\', '.implode($columns).'));';
+                $schema[] = '$'.$tableName.'->setIndices('.$indexVariableName.' = new Index(\''.$index->getName().'\', '.implode(', ', $columns).'));';
                 if ($index->isUnique()) {
                     $schema[] = $indexVariableName.'->setUnique()';
                 }
