@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/byteshard/schema/compare/v1.0.1...v1.1.0) (2023-10-10)
+
+
+### Features
+
+* add indices to schema generation ([de6fadf](https://github.com/byteshard/schema/commit/de6fadfd1b6e2170e0185d89aa951dced4360caa))
+
 ## [1.0.1](https://github.com/byteshard/schema/compare/v1.0.0...v1.0.1) (2023-10-09)
 
 
