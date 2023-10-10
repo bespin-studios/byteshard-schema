@@ -265,6 +265,26 @@ class DBManagement implements DBManagementInterface
         return $indices;
     }
 
+    public function getGrants(TableManagementInterface $table): array
+    {
+        $tableGrants  = Database::getArray('SELECT GRANTEE, PRIVILEGE_TYPE FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY TABLE_NAME');
+        $columnGrants = Database::getArray('SELECT GRANTEE, COLUMN_NAME, PRIVILEGE_TYPE FROM information_schema.COLUMN_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY PRIVILEGE_TYPE;');
+        $grants = [];
+        foreach ($tableGrants as $tableGrant) {
+            if (!array_key_exists($tableGrant->GRANTEE, $grants)) {
+                $grants[$tableGrant->GRANTEE] = new stdClass();
+            }
+            $grants[$tableGrant->GRANTEE]->Grantee = $tableGrant->GRANTEE;
+            $grants[$tableGrant->GRANTEE]->Privileges[$tableGrant->PRIVILEGE_TYPE] = [];
+        }
+        foreach ($columnGrants as $columnGrant) {
+            if (array_key_exists($columnGrant->GRANTEE, $grants) && array_key_exists($columnGrant->PRIVILEGE_TYPE, $grants[$columnGrant->GRANTEE]->Privileges)) {
+                $grants[$columnGrant->GRANTEE]->Privileges[] = $columnGrant->COLUMN_NAME;
+            }
+        }
+        return $grants;
+    }
+
     public function getIndexObject(string $tableName, string $indexName, string ...$columns): IndexManagementInterface
     {
         $columnObjects = [];

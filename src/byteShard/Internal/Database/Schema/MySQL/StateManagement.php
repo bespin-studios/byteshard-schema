@@ -6,6 +6,7 @@
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
+use byteShard\Database;
 use byteShard\Database\Schema\Statement;
 use byteShard\Database\Schema\Table;
 use byteShard\Exception;
@@ -207,6 +208,13 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
             array_push($schema, ...$this->getTableSchema($table, $tableName));
             array_push($schema, ...$this->getTableIndices($table, $tableName));
         }
+        foreach ($tables as $table) {
+            $tableName = $this->getVariableNameForSchema($table->getName());
+            $schema[] = '$state->addTable($'.$tableName.');';
+        }
+        foreach ($tables as $table) {
+            array_push($schema, ...$this->getTableGrants($table));
+        }
         return $schema;
     }
 
@@ -256,6 +264,30 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
             }
         }
         return $schema;
+    }
+
+    private function getTableGrants(TableManagementInterface $table): array
+    {
+        $result = [];
+        $grants = $this->dbManagement->getGrants($table);
+        if (!empty($grants)) {
+            foreach ($grants as $grant) {
+                $statement = '$state->addStatement(new Statement("GRANT ';
+                ksort($grant->Privileges);
+                $privileges = [];
+                foreach ($grant->Privileges as $privilege => $columns) {
+                    if (empty($columns)) {
+                        $privileges[] = $privilege;
+                    } else {
+                        $privileges[] = $privilege.' (`'.implode('`, `', $columns).'`)';
+                    }
+                }
+                $statement .= implode(', ', $privileges);
+                $statement .= ' ON '.$table->getName().' TO '.$grant->Grantee.'"));';
+                $result[] = $statement;
+            }
+        }
+        return $result;
     }
 
     private function getVariableNameForSchema(string $name): string
