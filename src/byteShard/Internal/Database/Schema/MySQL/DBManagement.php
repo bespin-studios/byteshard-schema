@@ -17,6 +17,7 @@ use byteShard\Internal\Database\BaseRecordset;
 use byteShard\Internal\Database\Schema\DBManagementInterface;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
+use byteShard\Internal\Database\Schema\Grants;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
 use mysqli;
@@ -267,7 +268,7 @@ class DBManagement implements DBManagementInterface
 
     /**
      * @param TableManagementInterface $table
-     * @return array<string,object>
+     * @return array<string,Grants>
      * @throws Exception
      */
     public function getGrants(TableManagementInterface $table): array
@@ -277,14 +278,14 @@ class DBManagement implements DBManagementInterface
         $grants = [];
         foreach ($tableGrants as $tableGrant) {
             if (!array_key_exists($tableGrant->GRANTEE, $grants)) {
-                $grants[$tableGrant->GRANTEE] = new stdClass();
+                $grants[$tableGrant->GRANTEE] = new Grants();
+                $grants[$tableGrant->GRANTEE]->setGrantee($tableGrant->GRANTEE);
             }
-            $grants[$tableGrant->GRANTEE]->Grantee = $tableGrant->GRANTEE;
-            $grants[$tableGrant->GRANTEE]->Privileges[$tableGrant->PRIVILEGE_TYPE] = [];
+            $grants[$tableGrant->GRANTEE]->addPrivilege($tableGrant->PRIVILEGE_TYPE);
         }
         foreach ($columnGrants as $columnGrant) {
-            if (array_key_exists($columnGrant->GRANTEE, $grants) && array_key_exists($columnGrant->PRIVILEGE_TYPE, $grants[$columnGrant->GRANTEE]->Privileges)) {
-                $grants[$columnGrant->GRANTEE]->Privileges[] = $columnGrant->COLUMN_NAME;
+            if (array_key_exists($columnGrant->GRANTEE, $grants)) {
+                $grants[$columnGrant->GRANTEE]->addColumns($columnGrant->PRIVILEGE_TYPE, $columnGrant->COLUMN_NAME);
             }
         }
         return $grants;

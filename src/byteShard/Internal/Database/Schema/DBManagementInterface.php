@@ -25,7 +25,7 @@ interface DBManagementInterface
     public function getColumns(TableManagementInterface $table): array;
 
     /**
-     * @return array<string,object>
+     * @return array<string,Grants>
      */
     public function getGrants(TableManagementInterface $table): array;
 

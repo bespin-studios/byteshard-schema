@@ -274,9 +274,8 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
         if (!empty($grants)) {
             foreach ($grants as $grant) {
                 $statement = '$state->addStatement(new Statement("GRANT ';
-                ksort($grant->Privileges);
                 $privileges = [];
-                foreach ($grant->Privileges as $privilege => $columns) {
+                foreach ($grant->getPrivileges() as $privilege => $columns) {
                     if (empty($columns)) {
                         $privileges[] = $privilege;
                     } else {
@@ -284,7 +283,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                     }
                 }
                 $statement .= implode(', ', $privileges);
-                $statement .= ' ON '.$table->getName().' TO '.$grant->Grantee.'"));';
+                $statement .= ' ON '.$table->getName().' TO '.$grant->getGrantee().'"));';
                 $result[] = $statement;
             }
         }

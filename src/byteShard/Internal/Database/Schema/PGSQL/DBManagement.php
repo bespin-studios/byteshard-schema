@@ -15,6 +15,7 @@ use byteShard\Internal\Database\BaseConnection;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\DBManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
+use byteShard\Internal\Database\Schema\Grants;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
 use PDO;
@@ -534,7 +535,7 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
     }
 
     /**
-     * @return array<string,object>
+     * @return array<string,Grants>
      */
     public function getGrants(TableManagementInterface $table): array
     {
