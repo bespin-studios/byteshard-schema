@@ -1,8 +1,10 @@
-<?php /** @noinspection SqlNoDataSourceInspection */
+<?php
 /**
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
  */
+/** @noinspection SqlResolve */
+/** @noinspection SqlNoDataSourceInspection */
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
@@ -474,7 +476,6 @@ class DBManagement implements DBManagementInterface
             $update     = false;
             $params     = [$this->dbSchemaVersion => $version, $this->dbSchemaDone => true, $this->dbSchemaType => $type, $this->dbSchemaValue => $value];
             if ($this->getVersion($type, $value, null) === null) {
-                /** @noinspection SqlResolve */
                 $query = 'INSERT INTO `'.$this->dbSchemaTable.'` (`'.implode('`, `', array_keys($params)).'`) VALUES (?, ? ,?, ?)';
             } else {
                 $query  = 'UPDATE `'.$this->dbSchemaTable.'` SET `'.$this->dbSchemaVersion.'`=?, `'.$this->dbSchemaDone.'`=? WHERE `'.$this->dbSchemaType.'`=? AND `'.$this->dbSchemaValue.'`=?';
