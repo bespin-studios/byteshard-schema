@@ -17,7 +17,7 @@ interface DBManagementInterface
 
     public function execute(string $command): void;
 
-    public function getColumnObject(string $name, string $newName, string $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface;
+    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface;
 
     /**
      * @return ColumnManagementInterface[]
@@ -45,7 +45,7 @@ interface DBManagementInterface
     /**
      * @return array<TableManagementInterface>
      */
-    public function getTables(): array;
+    public function getTables(bool $sorted = false): array;
 
     /**
      * @param string $type

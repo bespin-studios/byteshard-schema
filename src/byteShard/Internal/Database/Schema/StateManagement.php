@@ -34,7 +34,7 @@ abstract class StateManagement implements StateManagementInterface
     {
         $this->dbManagement = $dbManagement;
         $this->state        = $state;
-        if (class_exists('\config')) {
+        if (class_exists('\\config')) {
             $config = new \config();
             if ($config instanceof Config) {
                 $this->config = $config;

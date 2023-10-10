@@ -276,7 +276,6 @@ class Setup
 
     /**
      * @return array<int, string>
-     * @throws Exception
      */
     public function ensureDbSchemaVersion(DBManagementInterface $dbManagement, bool $dryRun = false): array
     {

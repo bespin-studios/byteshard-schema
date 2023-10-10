@@ -3,6 +3,8 @@
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
  */
+/** @noinspection SqlResolve */
+/** @noinspection SqlNoDataSourceInspection */
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
@@ -36,7 +38,7 @@ class Table extends TableParent
     {
         $orderedPrimaryKeyColumns[] = '`'.$addIdentityColumn->getName().'`';
         foreach ($primaryKeyColumns as $primaryKeyColumn) {
-            if ($primaryKeyColumn !== $addIdentityColumn->getName()) {
+            if ($primaryKeyColumn->getName() !== $addIdentityColumn->getName()) {
                 $orderedPrimaryKeyColumns[] = '`'.$primaryKeyColumn.'`';
             }
         }
@@ -121,7 +123,7 @@ class Table extends TableParent
     {
         $orderedPrimaryKeyColumns[] = '`'.$targetIdentityColumn->getName().'`';
         foreach ($primaryKeyColumns as $primaryKeyColumn) {
-            if ($primaryKeyColumn !== $targetIdentityColumn->getName()) {
+            if ($primaryKeyColumn->getName() !== $targetIdentityColumn->getName()) {
                 $orderedPrimaryKeyColumns[] = '`'.$primaryKeyColumn.'`';
             }
         }

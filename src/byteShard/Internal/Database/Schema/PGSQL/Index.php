@@ -1,4 +1,6 @@
 <?php
+/** @noinspection SqlResolve */
+/** @noinspection SqlNoDataSourceInspection */
 /**
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
@@ -12,7 +14,7 @@ use byteShard\Internal\Database\Schema\IndexParent;
 class Index extends IndexParent
 {
 
-    private string $tableName = '';
+    private string $tableName;
 
     public function __construct(string $tableName, string $indexName, ColumnManagementInterface ...$columns)
     {
