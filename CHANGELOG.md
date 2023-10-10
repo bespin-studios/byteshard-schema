@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/byteshard/schema/compare/v1.1.0...v1.1.1) (2023-10-10)
+
+
+### Bug Fixes
+
+* add separator to columns in indices ([8453550](https://github.com/byteshard/schema/commit/84535500b3520a0d301f8bb26af3a28937d395c0))
+
 # [1.1.0](https://github.com/byteshard/schema/compare/v1.0.1...v1.1.0) (2023-10-10)
 
 
