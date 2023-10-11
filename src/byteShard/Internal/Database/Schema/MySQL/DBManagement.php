@@ -284,9 +284,11 @@ class DBManagement implements DBManagementInterface
             $grants[$tableGrant->GRANTEE]->addPrivilege($tableGrant->PRIVILEGE_TYPE);
         }
         foreach ($columnGrants as $columnGrant) {
-            if (array_key_exists($columnGrant->GRANTEE, $grants)) {
-                $grants[$columnGrant->GRANTEE]->addColumns($columnGrant->PRIVILEGE_TYPE, $columnGrant->COLUMN_NAME);
+            if (!array_key_exists($columnGrant->GRANTEE, $grants)) {
+                $grants[$columnGrant->GRANTEE] = new Grants();
+                $grants[$columnGrant->GRANTEE]->setGrantee($columnGrant->GRANTEE);
             }
+            $grants[$columnGrant->GRANTEE]->addColumns($columnGrant->PRIVILEGE_TYPE, $columnGrant->COLUMN_NAME);
         }
         return $grants;
     }
