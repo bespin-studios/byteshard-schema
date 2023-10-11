@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/byteshard/schema/compare/v1.2.0...v1.2.1) (2023-10-11)
+
+
+### Bug Fixes
+
+* correctly evaluate column grants ([cc1c67b](https://github.com/byteshard/schema/commit/cc1c67b8030247b6e1b51005c3258fce06c69a9e))
+
 # [1.2.0](https://github.com/byteshard/schema/compare/v1.1.1...v1.2.0) (2023-10-10)
 
 
