@@ -79,13 +79,28 @@ class Column extends ColumnParent
         $properties[ColumnArguments::NAME->value] = '\''.$this->getName().'\'';
         switch ($this->getType()) {
             case Enum\DB\ColumnType::BIGINT:
+                if ($this->getLength() !== 20) {
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
+                }
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::BIGINT';
                 break;
             case Enum\DB\ColumnType::INT:
+                if ($this->getLength() !== 11) {
+                    $properties[ColumnArguments::LENGTH->value] = $this->getLength();
+                }
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::INT';
                 break;
             case Enum\DB\ColumnType::TINYINT:
-                $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
+                if ($this->getLength() !== 4) {
+                    if ($this->getLength() === 1) {
+                        $properties[ColumnArguments::TYPE->value] = 'ColumnType::BOOL';
+                    } else {
+                        $properties[ColumnArguments::LENGTH->value] = $this->getLength();
+                        $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
+                    }
+                } else {
+                    $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
+                }
                 break;
             case Enum\DB\ColumnType::BOOL:
             case Enum\DB\ColumnType::BOOLEAN:
