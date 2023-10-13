@@ -47,6 +47,13 @@ class Column extends ColumnParent
         if ($isNullable === false && $default === null && $type->isNumeric()) {
             $default = 0;
         }
+        if ($isNullable === false && $default === null) {
+            if ($type->isNumeric()) {
+                $default = 0;
+            } else {
+                $default = "''";
+            }
+        }
         parent::__construct($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
@@ -184,11 +191,15 @@ class Column extends ColumnParent
         }
         if ($this->getDefault() !== null) {
             // a default with 0 is not mandatory for numeric columns since it's set as the default for non-nullable columns anyway
-            if (!($this->isNullable() === false && $this->getDefault() === 0 && $this->getType()->isNumeric())) {
-                if ($this->getDefault() === "''") {
-                    $properties[ColumnArguments::DEFAULT->value] = '"'.$this->getDefault().'"';
+            if ($this->isNullable() === false) {
+                if ($this->getType()->isNumeric()) {
+                    if ($this->getDefault() !== 0) {
+                        $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    }
                 } else {
-                    $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    if ($this->getDefault() !== "''") {
+                        $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    }
                 }
             }
         }
