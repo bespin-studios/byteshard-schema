@@ -1,3 +1,11 @@
+## [1.2.2](https://github.com/byteshard/schema/compare/v1.2.1...v1.2.2) (2023-10-13)
+
+
+### Bug Fixes
+
+* fix length handling for numeric columns and boolean ([6019273](https://github.com/byteshard/schema/commit/60192735176c0ebd0a37fce621cf01debbc4dc09))
+* primary key matching was broken ([f374045](https://github.com/byteshard/schema/commit/f37404510bbef42786a2fe1778bc5b8eb778faa3))
+
 ## [1.2.1](https://github.com/byteshard/schema/compare/v1.2.0...v1.2.1) (2023-10-11)
 
 
