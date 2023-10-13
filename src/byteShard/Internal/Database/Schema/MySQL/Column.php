@@ -182,6 +182,16 @@ class Column extends ColumnParent
         if ($this->isIdentity() === true) {
             $properties[ColumnArguments::IDENTITY->value] = 'true';
         }
+        if ($this->getDefault() !== null) {
+            // a default with 0 is not mandatory for numeric columns since it's set as the default for non-nullable columns anyway
+            if (!($this->isNullable() === false && $this->getDefault() === 0 && $this->getType()->isNumeric())) {
+                if ($this->getDefault() === "''") {
+                    $properties[ColumnArguments::DEFAULT->value] = '"'.$this->getDefault().'"';
+                } else {
+                    $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                }
+            }
+        }
         array_walk($properties, function (&$value, $key) {
             $value = $key.': '.$value;
         });
