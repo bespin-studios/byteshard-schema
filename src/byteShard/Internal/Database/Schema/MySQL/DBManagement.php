@@ -214,6 +214,25 @@ class DBManagement implements DBManagementInterface
             $default = $val->COLUMN_DEFAULT !== '' ? $val->COLUMN_DEFAULT : null;
             if ($default === 'NULL') {
                 $default = null;
+            } elseif ($default === '""') {
+                // unify empty string default
+                $default = '\'\'';
+            }
+            if ($default !== null && $type->isNumeric()) {
+                switch ($type) {
+                    case Enum\DB\ColumnType::TINYINT:
+                    case Enum\DB\ColumnType::SMALLINT:
+                    case Enum\DB\ColumnType::MEDIUMINT:
+                    case Enum\DB\ColumnType::INT:
+                    case Enum\DB\ColumnType::BIGINT:
+                        $default = intval($default);
+                        break;
+                    case Enum\DB\ColumnType::DECIMAL:
+                    case Enum\DB\ColumnType::FLOAT:
+                    case Enum\DB\ColumnType::DOUBLE:
+                        $default = floatval($default);
+                        break;
+                }
             }
             $columns[$val->COLUMN_NAME] = new Column(
                 $val->COLUMN_NAME,
@@ -275,7 +294,7 @@ class DBManagement implements DBManagementInterface
     {
         $tableGrants  = Database::getArray('SELECT GRANTEE, PRIVILEGE_TYPE FROM INFORMATION_SCHEMA.TABLE_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY TABLE_NAME');
         $columnGrants = Database::getArray('SELECT GRANTEE, COLUMN_NAME, PRIVILEGE_TYPE FROM information_schema.COLUMN_PRIVILEGES WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' ORDER BY PRIVILEGE_TYPE;');
-        $grants = [];
+        $grants       = [];
         foreach ($tableGrants as $tableGrant) {
             if (!array_key_exists($tableGrant->GRANTEE, $grants)) {
                 $grants[$tableGrant->GRANTEE] = new Grants();
@@ -401,7 +420,7 @@ class DBManagement implements DBManagementInterface
             }
         }
         if ($sorted === true) {
-            usort($tables, function(TableManagementInterface $a, TableManagementInterface $b): int {
+            usort($tables, function (TableManagementInterface $a, TableManagementInterface $b): int {
                 return strcmp($a->getName(), $b->getName());
             });
         }
@@ -664,7 +683,9 @@ class DBManagement implements DBManagementInterface
                     Database::insert('INSERT INTO '.$tableName.' ('.implode(', ', array_keys($params)).') VALUES (:'.implode(', :', array_keys($params)).')', $params, $newConnection);
                 } else {
                     unset($params[$columnUsername]);
-                    $query                   = 'UPDATE '.$tableName.' SET '.implode(', ', array_map(function ($value) {return $value.' = :'.$value;}, array_keys($params))).' WHERE '.$columnUsername.'='.':'.$columnUsername;
+                    $query                   = 'UPDATE '.$tableName.' SET '.implode(', ', array_map(function ($value) {
+                            return $value.' = :'.$value;
+                        }, array_keys($params))).' WHERE '.$columnUsername.'='.':'.$columnUsername;
                     $params[$columnUsername] = $username;
                     Database::update($query, $params, $newConnection);
                 }

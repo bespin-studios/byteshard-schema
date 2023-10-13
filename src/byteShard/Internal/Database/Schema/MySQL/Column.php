@@ -44,6 +44,9 @@ class Column extends ColumnParent
                 }
                 break;
         }
+        if ($isNullable === false && $default === null && $type->isNumeric()) {
+            $default = 0;
+        }
         parent::__construct($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
