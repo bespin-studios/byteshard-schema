@@ -86,7 +86,7 @@ abstract class TableParent implements TableManagementInterface
         $primaryKeyColumns = [];
         foreach ($this->columns as $column) {
             if ($column->isPrimary() === true) {
-                $primaryKeyColumns[] = $column;
+                $primaryKeyColumns[$column->getName()] = $column;
             }
         }
         return $primaryKeyColumns;
