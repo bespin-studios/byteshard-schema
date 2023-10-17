@@ -199,13 +199,11 @@ class Table extends TableParent
 
     public function getDropForeignKeyStatement(ForeignKeyInterface $foreignKey): string
     {
-        // TODO: Implement getDropForeignKeyStatement() method.
-        return '';
+        return 'ALTER TABLE '.$this->getName().$foreignKey->getDropForeignKeyStatement();
     }
 
     public function getAddForeignKeyStatement(ForeignKeyInterface $foreignKey): string
     {
-        // TODO: Implement getAddForeignKeyStatement() method.
-        return '';
+        return 'ALTER TABLE '.$this->getName().$foreignKey->getAddForeignKeyStatement();
     }
 }

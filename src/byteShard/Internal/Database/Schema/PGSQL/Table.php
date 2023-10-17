@@ -83,7 +83,7 @@ class Table extends TableParent
 
     public function getCreateTableStatement(): string
     {
-        $foreignKeyColumns = $this->getForeignKeyColumns();
+        $foreignKeyColumns = $this->getForeignKeys();
         $columns           = $this->getColumns();
         if (!empty($columns)) {
             $items          = [];

@@ -234,7 +234,7 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
      * @return array<string, ForeignKeyInterface>
      * @throws Exception
      */
-    public function getForeignKeyColumns(TableManagementInterface $table): array
+    public function getForeignKeys(TableManagementInterface $table): array
     {
         $foreignKeys = [];
 
@@ -319,9 +319,9 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
      */
     public function getTables(bool $sorted = false): array
     {
-        $query       = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :table_schema ';
-        $records     = Database::getArray($query, ['table_schema' => $this->tableSchema]);
-        $tables      = [];
+        $query   = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :table_schema ';
+        $records = Database::getArray($query, ['table_schema' => $this->tableSchema]);
+        $tables  = [];
         foreach ($records as $record) {
             $tables[] = new Table($record->table_name);
         }

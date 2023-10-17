@@ -14,7 +14,7 @@ abstract class ForeignKeyParent implements ForeignKeyInterface
     protected string $targetColumn;
     protected string $column;
     protected string $sourceTable;
-    protected string $foreignKeyConstraintName;
+    protected ?string $foreignKeyConstraintName;
 
     public function __construct(Column|string $column, string $sourceTable, string $targetTable, string $targetColumn, string $foreignKeyConstraintName = null)
     {
@@ -22,32 +22,7 @@ abstract class ForeignKeyParent implements ForeignKeyInterface
         $this->sourceTable              = $sourceTable;
         $this->targetTable              = $targetTable;
         $this->targetColumn             = $targetColumn;
-        $this->foreignKeyConstraintName = $foreignKeyConstraintName ?? $this->getConstraintName();
-    }
-
-    protected function getConstraintName(): string
-    {
-        return 'constraint fk_'.$this->sourceTable.'_'.$this->column;
-    }
-
-    public function getAddForeignKeyStatement(): string
-    {
-        // TODO: Implement getAddForeignKeyStatement() method.
-        return 'ALTER TABLE '.$this->sourceTable.' ADD CONSTRAINT '.$this->foreignKeyConstraintName.' FOREIGN KEY ('.$this->column.') REFERENCES '.$this->targetTable.'( '.$this->targetColumn.') '.'ON DELETE CASCADE';
-    }
-
-    public function getDropForeignKeyStatement(): string
-    {
-//        $statement =  $fkey->getSourceColumn();
-//        $statement =  ' DROP CONSTRAINT fk_'.$fkey->getSourceColumn();
-//        return $statement;
-        return '';
-    }
-
-    public function getForeignKeyStatement(): string
-    {
-        // return ' CONSTRAINT fk_'.$this->column.' FOREIGN KEY('.$this->column.') REFERENCES '. $this->targetTable.'('.$this->targetColumn.') ON DELETE CASCADE';
-        return $this->column.' FOREIGN KEY('.$this->column.') REFERENCES '.$this->targetTable.'('.$this->targetColumn.') ON DELETE CASCADE';
+        $this->foreignKeyConstraintName = $foreignKeyConstraintName;
     }
 
     public function getSourceColumn(): string
@@ -75,10 +50,5 @@ abstract class ForeignKeyParent implements ForeignKeyInterface
     {
         // TODO: Implement getForeignKeyColumns() method.
         return [];
-    }
-
-    public function getForeignKeyConstraintName(): string
-    {
-        return $this->foreignKeyConstraintName;
     }
 }

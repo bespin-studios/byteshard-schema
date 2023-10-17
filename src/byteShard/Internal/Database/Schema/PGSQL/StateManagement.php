@@ -51,7 +51,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                         }
 
                         //create or add foreign keys
-                        $this->ensureForeignKey($this->dbManagement->getForeignKeyColumns($table), $table->getForeignKeyColumns(), $table);
+                        $this->ensureForeignKey($this->dbManagement->getForeignKeys($table), $table->getForeignKeys(), $table);
                         // create or update indices if necessary
                         $this->ensureIndices($this->dbManagement->getIndices($table), $table->getIndices(), $table);
 
@@ -263,7 +263,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                     $schema[]     = $res;
                     $totalColumns -= 1;
                 }
-                $foreignKeyColumns = $this->dbManagement->getForeignKeyColumns($table);
+                $foreignKeyColumns = $this->dbManagement->getForeignKeys($table);
                 if (!empty($foreignKeyColumns)) {
                     foreach ($foreignKeyColumns as $foreignKey) {
                         if ($foreignKey->getSourceColumn() && $foreignKey->getTargetTable() && $foreignKey->getTargetColumn()) {

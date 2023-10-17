@@ -6,6 +6,9 @@
 
 namespace byteShard\Internal\Database\Schema;
 
+use byteShard\Database\Schema\Column;
+use byteShard\Database\Schema\Index;
+use byteShard\Database\Schema\Table;
 use byteShard\Exception;
 use byteShard\Internal\Database\BaseConnection;
 use byteShard\Enum;
@@ -80,7 +83,7 @@ interface DBManagementInterface
      * @param TableManagementInterface $table
      * @return array<string, ForeignKeyInterface>
      */
-    public function getForeignKeyColumns(TableManagementInterface $table): array;
+    public function getForeignKeys(TableManagementInterface $table): array;
 
 
     /**

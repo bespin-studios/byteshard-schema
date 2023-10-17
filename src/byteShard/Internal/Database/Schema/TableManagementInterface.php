@@ -6,8 +6,6 @@
 
 namespace byteShard\Internal\Database\Schema;
 
-use byteShard\Database\Schema\ForeignKey;
-
 interface TableManagementInterface
 {
     public function addColumn(ColumnParent ...$columns): void;
@@ -106,9 +104,9 @@ interface TableManagementInterface
     /**
      * @return array<string, ForeignKeyInterface>
      */
-    public function getForeignKeyColumns(): array;
+    public function getForeignKeys(): array;
 
-    public function setForeignKeys(ForeignKey ...$foreignKeys): void;
+    public function setForeignKeys(ForeignKeyInterface ...$foreignKeys): void;
 
     public function getDropForeignKeyStatement(ForeignKeyInterface $foreignKey): string;
 

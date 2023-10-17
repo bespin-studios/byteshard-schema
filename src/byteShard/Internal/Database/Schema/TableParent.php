@@ -95,16 +95,15 @@ abstract class TableParent implements TableManagementInterface
     /**
      * @return array<string, ForeignKeyInterface>
      */
-    public function getForeignKeyColumns(): array
+    public function getForeignKeys(): array
     {
         return $this->foreignKeys;
     }
 
-    public function setForeignKeys(\byteShard\Database\Schema\ForeignKey ...$foreignKeys): void
+    public function setForeignKeys(ForeignKeyInterface ...$foreignKeys): void
     {
         foreach ($foreignKeys as $foreignKey) {
-            $foreignKeyNew                                     = new ForeignKey($foreignKey->getSourceColumn(), $this->name, $foreignKey->getTargetTable(), $foreignKey->getTargetColumn());
-            $this->foreignKeys[$foreignKey->getSourceColumn()] = $foreignKeyNew;
+            $this->foreignKeys[$foreignKey->getSourceColumn()] = $foreignKey;
         }
     }
 

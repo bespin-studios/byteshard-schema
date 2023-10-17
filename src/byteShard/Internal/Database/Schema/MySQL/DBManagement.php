@@ -244,40 +244,33 @@ class DBManagement implements DBManagementInterface
     }
 
     /**
-     * @return array<IndexManagementInterface>
+     * @return array<string, IndexManagementInterface>
      * @throws Exception
      */
     public function getIndices(TableManagementInterface $table): array
     {
-        $indices       = [];
-        $indicesTmp    = [];
-        $newConnection = $this->connection->getConnection(true);
-        if ($newConnection instanceof BaseConnection) {
-            $tmp = Database::getArray('SHOW INDEX FROM `'.$table->getName().'` WHERE NOT `Key_name`=\'PRIMARY\'', [], $newConnection);
-            // Check whether there is a foreign key on the same table/column and don't list it as an index
-            $foreignKeys = Database::getArray('SELECT TABLE_NAME, COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_NAME <> REFERENCED_TABLE_NAME', [], $newConnection);
-            foreach ($tmp as $val) {
-                foreach ($foreignKeys as $foreignKey) {
-                    if ($foreignKey->TABLE_NAME === $table->getName() && $foreignKey->COLUMN_NAME === $val->Column_name) {
-                        continue 2;
-                    }
-                }
-                $indicesTmp[$val->Key_name]['Columns'][$val->Seq_in_index] = new Column($val->Column_name);
-                $indicesTmp[$val->Key_name]['Index_type']                  = $val->Index_type;
+        $result       = [];
+        $indexRecords = Database::getArray('SHOW INDEXES FROM '.$table->getName().' WHERE NOT Key_name=\'PRIMARY\'');
+        $indices      = [];
+        foreach ($indexRecords as $index) {
+            if (!array_key_exists($index->Key_name, $indices)) {
+                $indices[$index->Key_name]         = new stdClass();
+                $indices[$index->Key_name]->Unique = $index->Non_unique === '1';
             }
-            foreach ($indicesTmp as $indexName => $index) {
-                if (is_string($indexName)) {
-                    $columns = $index['Columns'];
-                    ksort($columns);
-                    $indices[$indexName] = new Index($indexName, ...$columns);
-                    if (is_string($index['Index_type'])) {
-                        $indices[$indexName]->setType($index['Index_type']);
-                    }
-                }
-            }
-            $newConnection->disconnect();
+            $indices[$index->Key_name]->IndexName                     = $index->Key_name;
+            $indices[$index->Key_name]->Columns[$index->Seq_in_index] = new Column($index->Column_name);
         }
-        return $indices;
+        if (!empty($indices)) {
+            foreach ($indices as $index) {
+                ksort($index->Columns);
+                $indexObject = new Index($index->IndexName, ...$index->Columns);
+                if ($index->Unique === true) {
+                    $indexObject->setUnique();
+                }
+                $result[$indexObject->getName()] = $indexObject;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -376,29 +369,8 @@ class DBManagement implements DBManagementInterface
             }
         }
         foreach ($tables as $table) {
-            $tableIndices = Database::getArray('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=\''.$this->getTableSchema().'\' AND TABLE_NAME=\''.$table->getName().'\' AND NOT CONSTRAINT_NAME=\'PRIMARY\' AND REFERENCED_TABLE_NAME IS NULL');
-            foreach ($tableIndices as $tableIndex) {
-                $indexRecords = Database::getArray('SHOW INDEXES FROM '.$table->getName().' WHERE Key_name=\''.$tableIndex->CONSTRAINT_NAME.'\'');
-                $indices      = [];
-                foreach ($indexRecords as $index) {
-                    if (!array_key_exists($index->Key_name, $indices)) {
-                        $indices[$index->Key_name]         = new stdClass();
-                        $indices[$index->Key_name]->Unique = $index->Non_unique === '1';
-                    }
-                    $indices[$index->Key_name]->IndexName                     = $index->Key_name;
-                    $indices[$index->Key_name]->Columns[$index->Seq_in_index] = new Column($index->Column_name);
-                }
-                if (!empty($indices)) {
-                    foreach ($indices as $index) {
-                        ksort($index->Columns);
-                        $indexObject = new Index($index->IndexName, ...$index->Columns);
-                        if ($index->Unique === true) {
-                            $indexObject->setUnique();
-                        }
-                        $table->setIndices($indexObject);
-                    }
-                }
-            }
+            $indices = $this->getIndices($table);
+            $table->setIndices(...$indices);
         }
         if ($sorted === true) {
             usort($tables, function (TableManagementInterface $a, TableManagementInterface $b): int {
@@ -547,6 +519,23 @@ class DBManagement implements DBManagementInterface
         return $record !== null;
     }
 
+
+    /**
+     * @return array<string, ForeignKeyInterface>
+     * @throws Exception
+     */
+    public function getForeignKeys(TableManagementInterface $table): array
+    {
+        $keys   = Database::getArray('SELECT COLUMN_NAME, TABLE_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME, CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME=\''.$table->getName().'\' AND NOT REFERENCED_TABLE_SCHEMA IS NULL');
+        $result = [];
+        foreach ($keys as $key) {
+            if (is_string($key->COLUMN_NAME)) {
+                $result[$key->COLUMN_NAME] = new ForeignKey($key->COLUMN_NAME, $key->TABLE_NAME, $key->REFERENCED_TABLE_NAME, $key->REFERENCED_COLUMN_NAME, $key->CONSTRAINT_NAME);
+            }
+        }
+        return $result;
+    }
+
     ##########################################################################
     ### PRIVATE FUNCTIONS
     ##########################################################################
@@ -612,15 +601,6 @@ class DBManagement implements DBManagementInterface
             $this->tableSchema = $this->connection->getDB();
         }
         return $this->tableSchema;
-    }
-
-    /**
-     * @return array<string, ForeignKeyInterface>
-     */
-    public function getForeignKeyColumns(TableManagementInterface $table): array
-    {
-        // TODO: Implement getForeignKeyColumns() method.
-        return [];
     }
 
     /**
