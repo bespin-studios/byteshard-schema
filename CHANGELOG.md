@@ -1,3 +1,19 @@
+# [1.3.0](https://github.com/byteshard/schema/compare/v1.2.2...v1.3.0) (2023-10-17)
+
+
+### Bug Fixes
+
+* don't show empty string values in schema, instead set a default for it in case the column is not nullable ([eb894cb](https://github.com/byteshard/schema/commit/eb894cb1a27f3a8ba0c1fd325ff6e6fc045a2936))
+* fix default value for numeric columns which are not nullable ([49ed72c](https://github.com/byteshard/schema/commit/49ed72c16123281b43c53c11e6537499cdd513da))
+* fix default value for string columns with an empty string ([a5253e6](https://github.com/byteshard/schema/commit/a5253e6c2f1c8ccd9825cfd4cd908a19b865d7fd))
+* move default for nullable to database specific implementation. ([93a5fcd](https://github.com/byteshard/schema/commit/93a5fcdbf0a59b859b0ca468b53b5afe11b8e123))
+
+
+### Features
+
+* foreign key support for mysql ([f5e36c3](https://github.com/byteshard/schema/commit/f5e36c31594e7a385126a14bbd01f56da745be7b))
+* foreign key support for mysql ([b7f1c1a](https://github.com/byteshard/schema/commit/b7f1c1a4c17df62e8009c08a9dc9ab1e7bfe57d8))
+
 ## [1.2.2](https://github.com/byteshard/schema/compare/v1.2.1...v1.2.2) (2023-10-13)
 
 
