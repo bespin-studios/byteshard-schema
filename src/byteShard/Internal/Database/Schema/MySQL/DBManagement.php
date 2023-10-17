@@ -60,20 +60,6 @@ class DBManagement implements DBManagementInterface
         }
     }
 
-    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, ?bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
-    {
-        if ($isNullable === null) {
-            if ($type->isNumeric()) {
-                $isNullable = false;
-            } elseif ($type === Enum\DB\ColumnType::BOOL || $type === Enum\DB\ColumnType::BOOLEAN) {
-                $isNullable = false;
-            } else {
-                $isNullable = true;
-            }
-        }
-        return new Column($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
-    }
-
     /**
      * @param TableManagementInterface $table
      * @return array<ColumnManagementInterface>
@@ -321,15 +307,6 @@ class DBManagement implements DBManagementInterface
         return $grants;
     }
 
-    public function getIndexObject(string $tableName, string $indexName, string ...$columns): IndexManagementInterface
-    {
-        $columnObjects = [];
-        foreach ($columns as $column) {
-            $columnObjects[] = new Column($column);
-        }
-        return new Index($indexName, ...$columnObjects);
-    }
-
     /**
      * @return array<string, string>
      * @throws Exception
@@ -381,11 +358,6 @@ class DBManagement implements DBManagementInterface
             }
         }
         return '';
-    }
-
-    public function getTableObject(string $tableName, ColumnManagementInterface ...$columns): TableManagementInterface
-    {
-        return new Table($tableName, ...$columns);
     }
 
     /**

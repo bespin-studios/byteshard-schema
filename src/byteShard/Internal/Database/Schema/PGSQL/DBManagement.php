@@ -54,18 +54,6 @@ class DBManagement implements DBManagementInterface
         }
     }
 
-    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, ?bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
-    {
-        if ($isNullable === null) {
-            if ($type->isNumeric()) {
-                $isNullable = false;
-            } else {
-                $isNullable = true;
-            }
-        }
-        return new Column(strtolower($name), $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
-    }
-
     /**
      * @return array<ColumnManagementInterface>
      * @throws Exception
@@ -242,15 +230,6 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return $indices;
     }
 
-    public function getIndexObject(string $tableName, string $indexName, string ...$columns): Index
-    {
-        $columnObjects = [];
-        foreach ($columns as $column) {
-            $columnObjects[] = new Column($column);
-        }
-        return new Index($tableName, $indexName, ...$columnObjects);
-    }
-
     /**
      * @return array<string, ForeignKeyInterface>
      * @throws Exception
@@ -332,11 +311,6 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
             return $record->table_comment;
         }
         return '';
-    }
-
-    public function getTableObject(string $tableName, ColumnManagementInterface ...$columns): Table
-    {
-        return new Table(strtolower($tableName), ...$columns);
     }
 
     /**

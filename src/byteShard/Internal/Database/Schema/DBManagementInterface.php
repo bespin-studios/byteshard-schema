@@ -17,8 +17,6 @@ interface DBManagementInterface
 
     public function execute(string $command): void;
 
-    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, ?bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface;
-
     /**
      * @return ColumnManagementInterface[]
      */
@@ -34,8 +32,6 @@ interface DBManagementInterface
      */
     public function getIndices(TableManagementInterface $table): array;
 
-    public function getIndexObject(string $tableName, string $indexName, string ...$columns): IndexManagementInterface;
-
     /**
      * @return array<string, string>
      */
@@ -44,8 +40,6 @@ interface DBManagementInterface
     public function getPrimaryKeyName(TableManagementInterface $table): string;
 
     public function getTableComment(string $table): string;
-
-    public function getTableObject(string $tableName, ColumnManagementInterface ...$columns): TableManagementInterface;
 
     /**
      * @return array<TableManagementInterface>

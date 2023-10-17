@@ -70,25 +70,27 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
 
     private function convertTable(Table $table): TableManagementInterface
     {
-        $columns        = [];
         $defaultCollate = $this->config->getCollate();
         $defaultCharset = $this->config->getCharset();
+
+        $columns = [];
         foreach ($table->getColumns() as $column) {
-            $columnObj = $this->dbManagement->getColumnObject($column->getName(), $column->getNewName(), $column->getType(), $column->getLength(), $column->isNullable(), $column->isPrimary(), $column->isIdentity(), $column->getDefault(), $column->getComment());
-            $columnObj->setCollate($column->getCollate() ?? $table->getCollate() ?? $defaultCollate);
-            $columns[] = $columnObj;
+            $columns[] = Factory::column($column, $column->getCollate() ?? $table->getCollate() ?? $defaultCollate);
         }
+
         $indices = [];
         foreach ($table->getIndices() as $index) {
-            $indexObject = $this->dbManagement->getIndexObject($table->getName(), $index->getName(), ...$index->getColumns());
-            $indexObject->setType($index->getType());
-            $indices[] = $indexObject;
+            $indices[] = Factory::index($table->getName(), $index);
         }
-        $tableObject = $this->dbManagement->getTableObject($table->getName(), ...$columns);
-        $tableObject->setComment($table->getComment());
+
+        $foreignKeys = [];
+        foreach ($table->getForeignKeys() as $foreignKey) {
+            $foreignKeys[] = Factory::foreignKey($table->getName(), $foreignKey);
+        }
+
+        $tableObject = Factory::table($table, $defaultCollate, $defaultCharset, ...$columns);
         $tableObject->setIndices(...$indices);
-        $tableObject->setCollate($table->getCollate() ?? $defaultCollate);
-        $tableObject->setDefaultCharset($table->getCharset() ?? $defaultCharset);
+        $tableObject->setForeignKeys(...$foreignKeys);
         return $tableObject;
     }
 
