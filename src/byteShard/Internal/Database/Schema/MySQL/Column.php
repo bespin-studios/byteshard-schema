@@ -44,6 +44,16 @@ class Column extends ColumnParent
                 }
                 break;
         }
+        if ($isNullable === false && $default === null && $type->isNumeric()) {
+            $default = 0;
+        }
+        if ($isNullable === false && $default === null) {
+            if ($type->isNumeric()) {
+                $default = 0;
+            } else {
+                $default = "''";
+            }
+        }
         parent::__construct($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
@@ -178,6 +188,20 @@ class Column extends ColumnParent
         }
         if ($this->isIdentity() === true) {
             $properties[ColumnArguments::IDENTITY->value] = 'true';
+        }
+        if ($this->getDefault() !== null) {
+            // a default with 0 is not mandatory for numeric columns since it's set as the default for non-nullable columns anyway
+            if ($this->isNullable() === false) {
+                if ($this->getType()->isNumeric()) {
+                    if ($this->getDefault() !== 0) {
+                        $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    }
+                } else {
+                    if ($this->getDefault() !== "''") {
+                        $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    }
+                }
+            }
         }
         array_walk($properties, function (&$value, $key) {
             $value = $key.': '.$value;

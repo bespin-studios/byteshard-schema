@@ -56,8 +56,8 @@ abstract class StateManagement implements StateManagementInterface
     }
 
     /**
-     * @param array<IndexManagementInterface> $currentSchemaIndices
-     * @param array<IndexManagementInterface> $targetSchemaIndices
+     * @param array<string, IndexManagementInterface> $currentSchemaIndices
+     * @param array<string, IndexManagementInterface> $targetSchemaIndices
      * @param TableManagementInterface $table
      */
     protected function ensureIndices(array $currentSchemaIndices, array $targetSchemaIndices, TableManagementInterface $table): void
@@ -73,6 +73,31 @@ abstract class StateManagement implements StateManagementInterface
         foreach ($targetSchemaIndices as $indexName => $targetSchemaIndex) {
             if (array_key_exists($indexName, $currentSchemaIndices) === false) {
                 $this->dbManagement->execute($table->getAddIndexStatement($targetSchemaIndex));
+            }
+        }
+    }
+
+    /**
+     * @param array<string, ForeignKeyInterface> $currentSchemaForeignKeys
+     * @param array<string, ForeignKeyInterface> $targetSchemaForeignKeys
+     * @param TableManagementInterface $table
+     * @return void
+     */
+    protected function ensureForeignKeys(array $currentSchemaForeignKeys, array $targetSchemaForeignKeys, TableManagementInterface $table): void
+    {
+        foreach ($currentSchemaForeignKeys as $columnName => $currentSchemaForeignKey) {
+            if (!array_key_exists($columnName, $targetSchemaForeignKeys)) {
+                // key exists in the database but not in the schema definition
+                $this->dbManagement->execute($table->getDropForeignKeyStatement($currentSchemaForeignKey));
+            } elseif ($currentSchemaForeignKey->getTargetTable() !== $targetSchemaForeignKeys[$columnName]->getTargetTable() || $currentSchemaForeignKey->getTargetColumn() !== $targetSchemaForeignKeys[$columnName]->getTargetColumn()) {
+                // foreign key references a different table or column, drop it and recreate it
+                $this->dbManagement->execute($table->getDropForeignKeyStatement($currentSchemaForeignKey));
+                $this->dbManagement->execute($table->getAddForeignKeyStatement($targetSchemaForeignKeys[$columnName]));
+            }
+        }
+        foreach ($targetSchemaForeignKeys as $columnName => $targetSchemaForeignKey) {
+            if (!array_key_exists($columnName, $currentSchemaForeignKeys)) {
+                $this->dbManagement->execute($table->getAddForeignKeyStatement($targetSchemaForeignKey));
             }
         }
     }

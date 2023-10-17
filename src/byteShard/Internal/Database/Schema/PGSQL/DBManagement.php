@@ -14,6 +14,7 @@ use byteShard\Exception;
 use byteShard\Internal\Database\BaseConnection;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\DBManagementInterface;
+use byteShard\Internal\Database\Schema\DBManagementParent;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\Grants;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
@@ -21,7 +22,7 @@ use byteShard\Internal\Database\Schema\TableManagementInterface;
 use PDO;
 use PDOException;
 
-class DBManagement implements DBManagementInterface
+class DBManagement extends DBManagementParent implements DBManagementInterface
 {
     private BaseConnection $connection;
     private string         $database;
@@ -30,7 +31,6 @@ class DBManagement implements DBManagementInterface
     private string         $dbSchemaValue   = 'value';
     private string         $dbSchemaVersion = 'version';
     private string         $dbSchemaDone    = 'done';
-    private bool           $dryRun          = false;
     /**
      * @var array<string>
      */
@@ -47,16 +47,11 @@ class DBManagement implements DBManagementInterface
 
     public function execute(string $command): void
     {
-        if ($this->dryRun === true) {
+        if ($this->isDryRun() === true) {
             $this->dryRunCommands[] = $command;
         } else {
             $this->connection->execute($command);
         }
-    }
-
-    public function getColumnObject(string $name, string $newName, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, null|int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = ''): ColumnManagementInterface
-    {
-        return new Column(strtolower($name), $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
     /**
@@ -235,20 +230,11 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return $indices;
     }
 
-    public function getIndexObject(string $tableName, string $indexName, string ...$columns): Index
-    {
-        $columnObjects = [];
-        foreach ($columns as $column) {
-            $columnObjects[] = new Column($column);
-        }
-        return new Index($tableName, $indexName, ...$columnObjects);
-    }
-
     /**
      * @return array<string, ForeignKeyInterface>
      * @throws Exception
      */
-    public function getForeignKeyColumns(TableManagementInterface $table): array
+    public function getForeignKeys(TableManagementInterface $table): array
     {
         $foreignKeys = [];
 
@@ -327,20 +313,15 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return '';
     }
 
-    public function getTableObject(string $tableName, ColumnManagementInterface ...$columns): Table
-    {
-        return new Table(strtolower($tableName), ...$columns);
-    }
-
     /**
      * @return array<TableManagementInterface>
      * @throws Exception
      */
     public function getTables(bool $sorted = false): array
     {
-        $query       = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :table_schema ';
-        $records     = Database::getArray($query, ['table_schema' => $this->tableSchema]);
-        $tables      = [];
+        $query   = 'SELECT table_name FROM information_schema.tables WHERE table_schema = :table_schema ';
+        $records = Database::getArray($query, ['table_schema' => $this->tableSchema]);
+        $tables  = [];
         foreach ($records as $record) {
             $tables[] = new Table($record->table_name);
         }
@@ -412,12 +393,6 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return true;
     }
 
-    public function setDryRun(bool $dryRun): static
-    {
-        $this->dryRun = $dryRun;
-        return $this;
-    }
-
     /**
      * @param array<string> $dryRunCommands
      */
@@ -447,13 +422,13 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
     {
         $fields = [$this->dbSchemaType => $type, $this->dbSchemaValue => $value, $this->dbSchemaVersion => $version, $this->dbSchemaDone => true];
         if (($this->getVersion($type, $value, null) === null)) {
-            $query = 'INSERT INTO '.$this->dbSchemaTable.'('.$this->dbSchemaType.', '.$this->dbSchemaValue.', '.$this->dbSchemaVersion.', '.$this->dbSchemaDone.') VALUES(:type, :value, :version, :done)';
-            if ($this->dryRun === false) {
+            if ($this->isDryRun() === false) {
+                $query = 'INSERT INTO '.$this->dbSchemaTable.'('.$this->dbSchemaType.', '.$this->dbSchemaValue.', '.$this->dbSchemaVersion.', '.$this->dbSchemaDone.') VALUES(:type, :value, :version, :done)';
                 Database::insert($query, $fields);
             }
         } else {
-            $query = 'UPDATE '.$this->dbSchemaTable.' SET '.$this->dbSchemaVersion.'=:version, '.$this->dbSchemaDone.'=:done  WHERE '.$this->dbSchemaType.'=:type  and '.$this->dbSchemaValue.'=:value ';
-            if ($this->dryRun === false) {
+            if ($this->isDryRun() === false) {
+                $query = 'UPDATE '.$this->dbSchemaTable.' SET '.$this->dbSchemaVersion.'=:version, '.$this->dbSchemaDone.'=:done  WHERE '.$this->dbSchemaType.'=:type  and '.$this->dbSchemaValue.'=:value ';
                 Database::update($query, $fields);
             }
         }

@@ -17,7 +17,7 @@ class Column
     private string             $comment = '';
     private null|string|int    $default;
     private bool               $identity;
-    private bool               $isNullable;
+    private ?bool              $isNullable;
     private null|int|string    $length;
     private string             $name;
     private string             $newName = '';
@@ -27,21 +27,13 @@ class Column
 
     public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $nullable = null, bool $primary = false, bool $identity = false, string|int $default = null)
     {
-        $this->type = $type;
-        if ($nullable === null) {
-            if (Enum\DB\ColumnType::is_numeric($type)) {
-                $this->isNullable = false;
-            } else {
-                $this->isNullable = true;
-            }
-        } else {
-            $this->isNullable = $nullable;
-        }
-        $this->name     = $name;
-        $this->length   = $length;
-        $this->primary  = $primary;
-        $this->identity = $identity;
-        $this->default  = $default;
+        $this->type       = $type;
+        $this->isNullable = $nullable;
+        $this->name       = $name;
+        $this->length     = $length;
+        $this->primary    = $primary;
+        $this->identity   = $identity;
+        $this->default    = $default;
     }
 
     public function getComment(): string
@@ -82,7 +74,7 @@ class Column
         return $this->identity;
     }
 
-    public function isNullable(): bool
+    public function isNullable(): ?bool
     {
         return $this->isNullable;
     }

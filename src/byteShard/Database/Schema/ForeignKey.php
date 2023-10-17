@@ -11,12 +11,14 @@ class ForeignKey
     private string $targetTable;
     private string $targetColumn;
     private string $column;
+    private ?string $name;
 
-    public function __construct(Column|string $column, string $targetTable, string $targetColumn)
+    public function __construct(Column|string $column, string $targetTable, string $targetColumn, string $name = null)
     {
         $this->column       = ($column instanceof Column) ? $column->getName() : $column;
         $this->targetColumn = $targetColumn;
         $this->targetTable  = $targetTable;
+        $this->name         = $name;
     }
 
     public function getForeignKeys(): object
@@ -43,8 +45,8 @@ class ForeignKey
         return $this->targetTable;
     }
 
-    public function getForeignKeyStatement(): string
+    public function getName(): ?string
     {
-        return $this->getSourceColumn().' FOREIGN KEY('.$this->getSourceColumn().') REFERENCES '.$this->getTargetTable().'('.$this->getTargetColumn().') ON DELETE CASCADE';
+        return $this->name;
     }
 }

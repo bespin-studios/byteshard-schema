@@ -11,6 +11,7 @@ use byteShard\Database\Schema\Statement;
 use byteShard\Database\Schema\Table;
 use byteShard\Exception;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
+use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
 
 class StateManagement extends \byteShard\Internal\Database\Schema\StateManagement
@@ -50,6 +51,9 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                         // create or update indices if necessary
                         $this->ensureIndices($this->dbManagement->getIndices($table), $table->getIndices(), $table);
 
+                        // create or update foreign keys if necessary
+                        $this->ensureForeignKeys($this->dbManagement->getForeignKeys($table), $table->getForeignKeys(), $table);
+
                         // drop columns (must be done after index update)
                         if ($drop === true) {
                             $this->ensureColumnsDelete($currentColumns, $targetColumns, $table);
@@ -70,25 +74,27 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
 
     private function convertTable(Table $table): TableManagementInterface
     {
-        $columns        = [];
         $defaultCollate = $this->config->getCollate();
         $defaultCharset = $this->config->getCharset();
+
+        $columns = [];
         foreach ($table->getColumns() as $column) {
-            $columnObj = $this->dbManagement->getColumnObject($column->getName(), $column->getNewName(), $column->getType(), $column->getLength(), $column->isNullable(), $column->isPrimary(), $column->isIdentity(), $column->getDefault(), $column->getComment());
-            $columnObj->setCollate($column->getCollate() ?? $table->getCollate() ?? $defaultCollate);
-            $columns[] = $columnObj;
+            $columns[] = Factory::column($column, $column->getCollate() ?? $table->getCollate() ?? $defaultCollate);
         }
+
         $indices = [];
         foreach ($table->getIndices() as $index) {
-            $indexObject = $this->dbManagement->getIndexObject($table->getName(), $index->getName(), ...$index->getColumns());
-            $indexObject->setType($index->getType());
-            $indices[] = $indexObject;
+            $indices[] = Factory::index($table->getName(), $index);
         }
-        $tableObject = $this->dbManagement->getTableObject($table->getName(), ...$columns);
-        $tableObject->setComment($table->getComment());
+
+        $foreignKeys = [];
+        foreach ($table->getForeignKeys() as $foreignKey) {
+            $foreignKeys[] = Factory::foreignKey($table->getName(), $foreignKey);
+        }
+
+        $tableObject = Factory::table($table, $defaultCollate, $defaultCharset, ...$columns);
         $tableObject->setIndices(...$indices);
-        $tableObject->setCollate($table->getCollate() ?? $defaultCollate);
-        $tableObject->setDefaultCharset($table->getCharset() ?? $defaultCharset);
+        $tableObject->setForeignKeys(...$foreignKeys);
         return $tableObject;
     }
 
@@ -207,10 +213,11 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
             $tableName = $this->getVariableNameForSchema($table->getName());
             array_push($schema, ...$this->getTableSchema($table, $tableName));
             array_push($schema, ...$this->getTableIndices($table, $tableName));
+            array_push($schema, ...$this->getTableForeignKeys($table, $tableName, ...$this->dbManagement->getForeignKeys($table)));
         }
         foreach ($tables as $table) {
             $tableName = $this->getVariableNameForSchema($table->getName());
-            $schema[] = '$state->addTable($'.$tableName.');';
+            $schema[]  = '$state->addTable($'.$tableName.');';
         }
         foreach ($tables as $table) {
             array_push($schema, ...$this->getTableGrants($table));
@@ -228,7 +235,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
         if (!empty($columns)) {
             $columnDefinitions = [];
             foreach ($columns as $column) {
-                $columnName = $this->getVariableNameForSchema($column->getName());
+                $columnName                     = $this->getVariableNameForSchema($column->getName());
                 $columnDefinitions[$columnName] = $column->getSchema();
             }
             $maxLengthColumnName = 0;
@@ -248,7 +255,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
      */
     private function getTableIndices(TableManagementInterface $table, string $tableName): array
     {
-        $schema = [];
+        $schema  = [];
         $indices = $table->getIndices();
         if (!empty($indices)) {
             foreach ($indices as $index) {
@@ -257,13 +264,25 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                     $columns[] = '$'.$tableName.'_'.$this->getVariableNameForSchema($indexColumn);
                 }
                 $indexVariableName = '$'.$tableName.'_index_'.$this->getVariableNameForSchema($index->getName());
-                $schema[] = '$'.$tableName.'->setIndices('.$indexVariableName.' = new Index(\''.$index->getName().'\', '.implode(', ', $columns).'));';
+                $schema[]          = '$'.$tableName.'->setIndices('.$indexVariableName.' = new Index(\''.$index->getName().'\', '.implode(', ', $columns).'));';
                 if ($index->isUnique()) {
-                    $schema[] = $indexVariableName.'->setUnique()';
+                    $schema[] = $indexVariableName.'->setUnique();';
                 }
             }
         }
         return $schema;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getTableForeignKeys(TableManagementInterface $table, string $tableName, ForeignKeyInterface ...$foreignKeys): array
+    {
+        $result = [];
+        foreach ($foreignKeys as $foreignKey) {
+            $result[] = '$'.$tableName.'->setForeignKeys(new ForeignKey($'.$tableName.'_'.$foreignKey->getSourceColumn().', \''.$foreignKey->getTargetTable().'\', \''.$foreignKey->getTargetColumn().'\', \''.$foreignKey->getForeignKeyConstraintName().'\'));';
+        }
+        return $result;
     }
 
     /** @return array<string> */
@@ -273,7 +292,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
         $grants = $this->dbManagement->getGrants($table);
         if (!empty($grants)) {
             foreach ($grants as $grant) {
-                $statement = '$state->addStatement(new Statement("GRANT ';
+                $statement  = '$state->addStatement(new Statement("GRANT ';
                 $privileges = [];
                 foreach ($grant->getPrivileges() as $privilege => $columns) {
                     if (empty($columns)) {
@@ -284,7 +303,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                 }
                 $statement .= implode(', ', $privileges);
                 $statement .= ' ON '.$table->getName().' TO '.$grant->getGrantee().'"));';
-                $result[] = $statement;
+                $result[]  = $statement;
             }
         }
         return $result;
