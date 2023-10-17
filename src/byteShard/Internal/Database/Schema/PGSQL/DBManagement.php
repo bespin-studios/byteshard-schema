@@ -14,6 +14,7 @@ use byteShard\Exception;
 use byteShard\Internal\Database\BaseConnection;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\DBManagementInterface;
+use byteShard\Internal\Database\Schema\DBManagementParent;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\Grants;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
@@ -21,7 +22,7 @@ use byteShard\Internal\Database\Schema\TableManagementInterface;
 use PDO;
 use PDOException;
 
-class DBManagement implements DBManagementInterface
+class DBManagement extends DBManagementParent implements DBManagementInterface
 {
     private BaseConnection $connection;
     private string         $database;
@@ -30,7 +31,6 @@ class DBManagement implements DBManagementInterface
     private string         $dbSchemaValue   = 'value';
     private string         $dbSchemaVersion = 'version';
     private string         $dbSchemaDone    = 'done';
-    private bool           $dryRun          = false;
     /**
      * @var array<string>
      */
@@ -47,7 +47,7 @@ class DBManagement implements DBManagementInterface
 
     public function execute(string $command): void
     {
-        if ($this->dryRun === true) {
+        if ($this->isDryRun() === true) {
             $this->dryRunCommands[] = $command;
         } else {
             $this->connection->execute($command);
@@ -393,12 +393,6 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
         return true;
     }
 
-    public function setDryRun(bool $dryRun): static
-    {
-        $this->dryRun = $dryRun;
-        return $this;
-    }
-
     /**
      * @param array<string> $dryRunCommands
      */
@@ -428,13 +422,13 @@ WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true
     {
         $fields = [$this->dbSchemaType => $type, $this->dbSchemaValue => $value, $this->dbSchemaVersion => $version, $this->dbSchemaDone => true];
         if (($this->getVersion($type, $value, null) === null)) {
-            $query = 'INSERT INTO '.$this->dbSchemaTable.'('.$this->dbSchemaType.', '.$this->dbSchemaValue.', '.$this->dbSchemaVersion.', '.$this->dbSchemaDone.') VALUES(:type, :value, :version, :done)';
-            if ($this->dryRun === false) {
+            if ($this->isDryRun() === false) {
+                $query = 'INSERT INTO '.$this->dbSchemaTable.'('.$this->dbSchemaType.', '.$this->dbSchemaValue.', '.$this->dbSchemaVersion.', '.$this->dbSchemaDone.') VALUES(:type, :value, :version, :done)';
                 Database::insert($query, $fields);
             }
         } else {
-            $query = 'UPDATE '.$this->dbSchemaTable.' SET '.$this->dbSchemaVersion.'=:version, '.$this->dbSchemaDone.'=:done  WHERE '.$this->dbSchemaType.'=:type  and '.$this->dbSchemaValue.'=:value ';
-            if ($this->dryRun === false) {
+            if ($this->isDryRun() === false) {
+                $query = 'UPDATE '.$this->dbSchemaTable.' SET '.$this->dbSchemaVersion.'=:version, '.$this->dbSchemaDone.'=:done  WHERE '.$this->dbSchemaType.'=:type  and '.$this->dbSchemaValue.'=:value ';
                 Database::update($query, $fields);
             }
         }

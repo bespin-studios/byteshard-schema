@@ -16,6 +16,7 @@ use byteShard\Internal\Database\BaseConnection;
 use byteShard\Internal\Database\BaseRecordset;
 use byteShard\Internal\Database\Schema\DBManagementInterface;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
+use byteShard\Internal\Database\Schema\DBManagementParent;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\Grants;
 use byteShard\Internal\Database\Schema\TableManagementInterface;
@@ -24,7 +25,7 @@ use mysqli;
 use PDO;
 use stdClass;
 
-class DBManagement implements DBManagementInterface
+class DBManagement extends DBManagementParent implements DBManagementInterface
 {
     private BaseConnection $connection;
     private string         $database;
@@ -33,7 +34,6 @@ class DBManagement implements DBManagementInterface
     private string         $dbSchemaValue   = 'value';
     private string         $dbSchemaVersion = 'version';
     private string         $dbSchemaDone    = 'done';
-    private bool           $dryRun          = false;
     /**
      * @var array<string>
      */
@@ -53,7 +53,7 @@ class DBManagement implements DBManagementInterface
      */
     public function execute(string $command): void
     {
-        if ($this->dryRun === true) {
+        if ($this->isDryRun() === true) {
             $this->dryRunCommands[] = $command;
         } else {
             $this->connection->execute($command);
@@ -438,12 +438,6 @@ class DBManagement implements DBManagementInterface
         return true;
     }
 
-    public function setDryRun(bool $dryRun): static
-    {
-        $this->dryRun = $dryRun;
-        return $this;
-    }
-
     /**
      * @param array<string> $dryRunCommands
      */
@@ -471,7 +465,7 @@ class DBManagement implements DBManagementInterface
      */
     public function setVersion(string $type = 'bs_schema', string $value = 'version_identifier', string $version = 'v0.0.0'): static
     {
-        if ($this->dryRun === false) {
+        if ($this->isDryRun() === false) {
             $connection = $this->connection->getConnection();
             $update     = false;
             $params     = [$this->dbSchemaVersion => $version, $this->dbSchemaDone => true, $this->dbSchemaType => $type, $this->dbSchemaValue => $value];
