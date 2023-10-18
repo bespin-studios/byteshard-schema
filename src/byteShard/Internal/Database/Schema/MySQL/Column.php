@@ -71,7 +71,7 @@ class Column extends ColumnParent
         $statement .= $this->getColumnCollate($this->getType());
         $statement .= $this->isNullable() === false ? ' NOT NULL' : ' NULL';
         $statement .= $identity === true && $this->isIdentity() === true ? ' AUTO_INCREMENT' : '';
-        if ($this->getDefault() !== null) {
+        if ($this->getDefault() !== null && !($identity === true && $this->isIdentity() === true)) {
             $statement .= ' DEFAULT ';
             $statement .= Enum\DB\ColumnType::is_string($this->getType()) ? "'".$this->getDefault()."'" : $this->getDefault();
         }
