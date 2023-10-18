@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/byteshard/schema/compare/v1.3.0...v1.3.1) (2023-10-18)
+
+
+### Bug Fixes
+
+* mysql cannot have a default value for auto increment columns ([e57ee0b](https://github.com/byteshard/schema/commit/e57ee0b942e915ce80b3876c9398ae8e95ed86fe))
+
 # [1.3.0](https://github.com/byteshard/schema/compare/v1.2.2...v1.3.0) (2023-10-17)
 
 
