@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/byteshard/schema/compare/v1.3.1...v1.3.2) (2023-10-19)
+
+
+### Bug Fixes
+
+* default values for date, datetime and empty strings was not according to mysql definition ([e308a5a](https://github.com/byteshard/schema/commit/e308a5a6b61f332deb7518b77de6ecc310649dfc))
+
 ## [1.3.1](https://github.com/byteshard/schema/compare/v1.3.0...v1.3.1) (2023-10-18)
 
 
