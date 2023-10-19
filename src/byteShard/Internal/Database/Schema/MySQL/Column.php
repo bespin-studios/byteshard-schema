@@ -50,7 +50,7 @@ class Column extends ColumnParent
         if ($isNullable === false && $default === null) {
             if ($type->isNumeric()) {
                 $default = 0;
-            } else {
+            } elseif (!in_array($type, [Enum\DB\ColumnType::DATE, Enum\DB\ColumnType::DATETIME, Enum\DB\ColumnType::DATETIME2])) {
                 $default = "''";
             }
         }
@@ -70,10 +70,20 @@ class Column extends ColumnParent
         $statement .= $this->getColumnLength($this->getType());
         $statement .= $this->getColumnCollate($this->getType());
         $statement .= $this->isNullable() === false ? ' NOT NULL' : ' NULL';
-        $statement .= $identity === true && $this->isIdentity() === true ? ' AUTO_INCREMENT' : '';
-        if ($this->getDefault() !== null && !($identity === true && $this->isIdentity() === true)) {
+        if ($identity === true && $this->isIdentity() === true) {
+            $statement .= ' AUTO_INCREMENT';
+        } elseif ($this->getDefault() !== null) {
+            // auto increment cannot have default values
             $statement .= ' DEFAULT ';
-            $statement .= Enum\DB\ColumnType::is_string($this->getType()) ? "'".$this->getDefault()."'" : $this->getDefault();
+            if ($this->getType()->isString()) {
+                if ($this->getDefault() === '\'\'') {
+                    $statement .= $this->getDefault();
+                } else {
+                    $statement .= "'".$this->getDefault()."'";
+                }
+            } else {
+                $statement .= $this->getDefault();
+            }
         }
         $statement .= $this->getComment() !== '' ? ' COMMENT \''.$this->getComment().'\'' : '';
         return $statement;
