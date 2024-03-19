@@ -1,3 +1,11 @@
+## [1.3.3](https://github.com/byteshard/schema/compare/v1.3.2...v1.3.3) (2024-03-19)
+
+
+### Bug Fixes
+
+* longtext on mySQL was not correctly implemented ([ab732fa](https://github.com/byteshard/schema/commit/ab732fae56f29e1310d375ef0296a37e505b59f3))
+* update github CI to be compatible with node 20 ([03af44f](https://github.com/byteshard/schema/commit/03af44f3470e380004f453ad3fcd3f546820df03))
+
 ## [1.3.2](https://github.com/byteshard/schema/compare/v1.3.1...v1.3.2) (2023-10-19)
 
 
