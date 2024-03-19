@@ -6,7 +6,6 @@
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
-use byteShard\Database;
 use byteShard\Database\Schema\Statement;
 use byteShard\Database\Schema\Table;
 use byteShard\Exception;
