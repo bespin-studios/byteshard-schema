@@ -43,6 +43,11 @@ class Column extends ColumnParent
                     $length = null;
                 }
                 break;
+            case Enum\DB\ColumnType::LONGTEXT:
+                if ($length === null) {
+                    $length = 4294967295;
+                }
+                break;
         }
         if ($isNullable === false && $default === null && $type->isNumeric()) {
             $default = 0;
@@ -180,6 +185,9 @@ class Column extends ColumnParent
                 break;
             case Enum\DB\ColumnType::TIME:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::TIME';
+                break;
+            case Enum\DB\ColumnType::LONGTEXT:
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::LONGTEXT';
                 break;
             default:
                 print 'Unknown Column Type in '.get_class($this).': '.$this->getType()->value.' (11100001)';
