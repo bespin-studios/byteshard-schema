@@ -22,12 +22,10 @@ class BaseSchema
     private string    $dbSchemaVersion = 'version';
     private string    $dbSchemaDone    = 'done';
     private UserTable $userTableSchema;
-    private Target    $authenticationTarget;
 
-    public function __construct(UserTable $userTableSchema, Target $authenticationTarget)
+    public function __construct(?UserTable $userTableSchema, private readonly bool $localAuthenticationEnabled)
     {
-        $this->userTableSchema      = $userTableSchema;
-        $this->authenticationTarget = $authenticationTarget;
+        $this->userTableSchema = $userTableSchema ?? new UserTable();
     }
 
     /**
@@ -76,11 +74,8 @@ class BaseSchema
                 }
                 $userTable[] = new Column($this->userTableSchema->getFieldNameGrantLogin(), Enum\DB\ColumnType::TINYINT, 1, false, false, false, 0);
                 $userTable[] = new Column($this->userTableSchema->getFieldNameAuthenticationTarget(), Enum\DB\ColumnType::VARCHAR, 16, true);
-                switch ($this->authenticationTarget) {
-                    case Target::AUTH_TARGET_DEFINED_ON_DB:
-                    case Target::AUTH_TARGET_DB:
-                        $userTable[] = new Column($this->userTableSchema->getFieldNameLocalPassword(), Enum\DB\ColumnType::VARCHAR, 256, false);
-                        break;
+                if ($this->localAuthenticationEnabled === true) {
+                    $userTable[] = new Column($this->userTableSchema->getFieldNameLocalPassword(), Enum\DB\ColumnType::VARCHAR, 256, false);
                 }
                 $userTable[] = new Column($this->userTableSchema->getFieldNameServiceAccount(), Enum\DB\ColumnType::TINYINT, 1, false, false, false, 0);
                 $userTable[] = new Column($this->userTableSchema->getFieldNameLastTab(), Enum\DB\ColumnType::VARCHAR, 256, true);

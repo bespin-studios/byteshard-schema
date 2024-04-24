@@ -6,7 +6,7 @@
 
 namespace byteShard\Internal;
 
-use byteShard\Authentication\Enum\Target;
+use byteShard\Config\OverrideDataModelInterface;
 use byteShard\Database;
 use byteShard\Database\BaseSchema;
 use byteShard\Database\Schema\State;
@@ -20,6 +20,7 @@ use byteShard\Internal\Database\Schema\PGSQL\DBManagement as PgsqlDBManagement;
 use byteShard\Internal\Database\Schema\MySQL\StateManagement as MysqlStateManagement;
 use byteShard\Internal\Database\Schema\PGSQL\StateManagement as PgsqlStateManagement;
 use byteShard\Internal\Database\Schema\StateManagementInterface;
+use byteShard\Internal\Schema\DB\UserTable;
 use byteShard\Password;
 
 class Setup
@@ -79,7 +80,7 @@ class Setup
                 }
             }
             $this->environment      = $environment;
-            $this->showAdminUseCase = ($environment->getAuthenticationTarget() === Target::AUTH_TARGET_DB || $environment->getAuthenticationTarget() === Target::AUTH_TARGET_DEFINED_ON_DB);
+            $this->showAdminUseCase = $environment->isLocalAuthenticationEnabled();
             $this->processPostFields();
         }
     }
@@ -273,6 +274,14 @@ class Setup
     {
         return $this->ensureDbSchemaVersion($dbManagement, true);
     }
+    
+    private function getUserTableSchema(): UserTable
+    {
+        if ($this->environment instanceof OverrideDataModelInterface) {
+            return $this->environment->getOverrideDefinitions();
+        }
+        return new UserTable();
+    }
 
     /**
      * @return array<int, string>
@@ -284,8 +293,7 @@ class Setup
         $stateManagement = $this->getStateManagement($state);
         if ($stateManagement !== null) {
             $stateManagement->setDryRun($dryRun);
-
-            $baseSchema = new BaseSchema($this->environment->getUserTableSchema(), $this->environment->getAuthenticationTarget());
+            $baseSchema = new BaseSchema($this->getUserTableSchema(), $this->environment->isLocalAuthenticationEnabled());
             $dbManagement->setSchemaParameters($baseSchema->getBaseSchemaParameters());
             $baseSchemaVersions = $baseSchema->getBaseSchemaVersions();
             $mergeArray         = [];
@@ -346,7 +354,7 @@ class Setup
             $username           = $_POST['adminUser'];
             $password           = new Password();
             $password->password = $_POST['adminPass'];
-            $userSchema         = $this->environment->getUserTableSchema();
+            $userSchema         = $this->getUserTableSchema();
             $this->addOrUpdateUser($userSchema, $username, $password);
         }
     }
@@ -360,8 +368,7 @@ class Setup
             $this->initDBManagement();
             $this->dbManagement?->selectDatabase();
         }
-        $userSchema = $this->environment->getUserTableSchema();
-        $this->addOrUpdateUser($userSchema, $username, $password);
+        $this->addOrUpdateUser($this->getUserTableSchema(), $username, $password);
     }
 
     private function printHtmlHeader(): void
@@ -513,14 +520,12 @@ class Setup
     {
         $columnUserID         = $userSchema->getFieldNameUserId();
         $columnUsername       = $userSchema->getFieldNameUsername();
-        $columnAuthTarget     = $userSchema->getFieldNameAuthenticationTarget();
         $columnServiceAccount = $userSchema->getFieldNameServiceAccount();
         $columnGrantLogin     = $userSchema->getFieldNameGrantLogin();
         $columnPassword       = $userSchema->getFieldNameLocalPassword();
 
         $params                        = [];
         $params[$columnUsername]       = $username;
-        $params[$columnAuthTarget]     = Target::AUTH_TARGET_DB->value;
         $params[$columnServiceAccount] = 1;
         $params[$columnGrantLogin]     = 1;
         $params[$columnPassword]       = $password->hash();
