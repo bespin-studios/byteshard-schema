@@ -1,3 +1,11 @@
+## [1.3.4](https://github.com/byteshard/schema/compare/v1.3.3...v1.3.4) (2024-04-24)
+
+
+### Bug Fixes
+
+* update base schema to be compatible with new interfaces and remove authentication target logic ([ef5abf7](https://github.com/byteshard/schema/commit/ef5abf7eddfee399052f3ce9342f58b9f70802d9))
+* use latest core version ([b99cba7](https://github.com/byteshard/schema/commit/b99cba7792f06e46a2bc95ee308a7dc9f232b21a))
+
 ## [1.3.3](https://github.com/byteshard/schema/compare/v1.3.2...v1.3.3) (2024-03-19)
 
 
