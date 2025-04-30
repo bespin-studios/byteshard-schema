@@ -24,7 +24,7 @@ abstract class ColumnParent implements ColumnManagementInterface
     private bool               $primary;
     private Enum\DB\ColumnType $type;
 
-    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
     {
         $this->type       = $type;
         $this->name       = $name;

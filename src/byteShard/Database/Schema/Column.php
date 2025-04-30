@@ -25,7 +25,7 @@ class Column
     private Enum\DB\ColumnType $type;
     private ?string            $collate = null;
 
-    public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $nullable = null, bool $primary = false, bool $identity = false, string|int $default = null)
+    public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, ?bool $nullable = null, bool $primary = false, bool $identity = false, string|int|null $default = null)
     {
         $this->type       = $type;
         $this->isNullable = $nullable;
