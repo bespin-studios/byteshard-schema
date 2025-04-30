@@ -16,7 +16,7 @@ abstract class ForeignKeyParent implements ForeignKeyInterface
     protected string $sourceTable;
     protected ?string $foreignKeyConstraintName;
 
-    public function __construct(Column|string $column, string $sourceTable, string $targetTable, string $targetColumn, string $foreignKeyConstraintName = null)
+    public function __construct(Column|string $column, string $sourceTable, string $targetTable, string $targetColumn, ?string $foreignKeyConstraintName = null)
     {
         $this->column                   = ($column instanceof Column) ? $column->getName() : $column;
         $this->sourceTable              = $sourceTable;

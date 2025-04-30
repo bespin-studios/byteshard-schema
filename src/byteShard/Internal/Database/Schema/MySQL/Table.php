@@ -34,7 +34,7 @@ class Table extends TableParent
      * @param ColumnManagementInterface|null $addAutoIncrementColumn
      * @return string
      */
-    public function getAddIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $addIdentityColumn, ColumnManagementInterface $changeIdentityColumn = null, array $autoIncrementColumns = null, ColumnManagementInterface $addAutoIncrementColumn = null): string
+    public function getAddIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $addIdentityColumn, ?ColumnManagementInterface $changeIdentityColumn = null, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $addAutoIncrementColumn = null): string
     {
         $orderedPrimaryKeyColumns[] = '`'.$addIdentityColumn->getName().'`';
         foreach ($primaryKeyColumns as $primaryKeyColumn) {
@@ -102,7 +102,7 @@ class Table extends TableParent
      * @param ColumnManagementInterface|null $dropAutoIncrementColumn
      * @return string
      */
-    public function getDropIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, array $autoIncrementColumns = null, ColumnManagementInterface $dropAutoIncrementColumn = null): string
+    public function getDropIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $dropAutoIncrementColumn = null): string
     {
         return 'ALTER TABLE `'.$this->getName().'` DROP '.$primaryKeyName.' KEY, DROP COLUMN `'.$dropIdentityColumn->getName().'`, ADD '.$primaryKeyName.' KEY (`'.implode('`,`', $primaryKeyColumns).'`)';
     }
@@ -136,7 +136,7 @@ class Table extends TableParent
      * @param ColumnManagementInterface|null $targetSchemaIdentityColumn
      * @return string
      */
-    public function getRecreatePrimaryKeyStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $targetSchemaIdentityColumn = null): string
+    public function getRecreatePrimaryKeyStatement(string $primaryKeyName, array $primaryKeyColumns, ?ColumnManagementInterface $targetSchemaIdentityColumn = null): string
     {
         $orderedPrimaryKeyColumns = [];
         if ($targetSchemaIdentityColumn !== null) {

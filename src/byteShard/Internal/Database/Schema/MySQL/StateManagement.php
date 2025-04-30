@@ -183,7 +183,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
      * @param TableManagementInterface $table
      * @param ColumnManagementInterface|null $targetSchemaIdentityColumn
      */
-    private function ensurePrimaryKeys(array $currentSchemaPrimaryKeyColumns, array $targetSchemaPrimaryKeyColumns, TableManagementInterface $table, ColumnManagementInterface $targetSchemaIdentityColumn = null): void
+    private function ensurePrimaryKeys(array $currentSchemaPrimaryKeyColumns, array $targetSchemaPrimaryKeyColumns, TableManagementInterface $table, ?ColumnManagementInterface $targetSchemaIdentityColumn = null): void
     {
         $primaryKeyMatches = true;
         // check if a primary key column doesn't exist in either the target or the current schema

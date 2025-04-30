@@ -14,7 +14,7 @@ class Column extends ColumnParent
 {
     private string $collate = 'utf8mb4_unicode_ci';
 
-    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
     {
         // Database specific transformations and default values
         switch ($type) {
@@ -185,6 +185,9 @@ class Column extends ColumnParent
                 break;
             case Enum\DB\ColumnType::TIME:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::TIME';
+                break;
+            case Enum\DB\ColumnType::TEXT:
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::TEXT';
                 break;
             case Enum\DB\ColumnType::LONGTEXT:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::LONGTEXT';
