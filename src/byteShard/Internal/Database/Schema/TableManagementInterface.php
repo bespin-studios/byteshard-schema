@@ -21,7 +21,7 @@ interface TableManagementInterface
      * @param ColumnManagementInterface|null $addAutoIncrementColumn
      * @return string
      */
-    public function getAddIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $addIdentityColumn, ColumnManagementInterface $changeIdentityColumn = null, array $autoIncrementColumns = null, ColumnManagementInterface $addAutoIncrementColumn = null): string;
+    public function getAddIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $addIdentityColumn, ?ColumnManagementInterface $changeIdentityColumn = null, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $addAutoIncrementColumn = null): string;
 
     public function getAddIndexStatement(IndexManagementInterface $index): string;
 
@@ -44,7 +44,7 @@ interface TableManagementInterface
      * @param ColumnManagementInterface|null $dropAutoIncrementColumn
      * @return string
      */
-    public function getDropIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, array $autoIncrementColumns = null, ColumnManagementInterface $dropAutoIncrementColumn = null): string;
+    public function getDropIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $dropAutoIncrementColumn = null): string;
 
     public function getDropIndexStatement(IndexManagementInterface $index): string;
 
@@ -80,7 +80,7 @@ interface TableManagementInterface
      * @param ?ColumnManagementInterface $targetSchemaIdentityColumn
      * @return string
      */
-    public function getRecreatePrimaryKeyStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $targetSchemaIdentityColumn = null): string;
+    public function getRecreatePrimaryKeyStatement(string $primaryKeyName, array $primaryKeyColumns, ?ColumnManagementInterface $targetSchemaIdentityColumn = null): string;
 
     /**
      * @return array<string>

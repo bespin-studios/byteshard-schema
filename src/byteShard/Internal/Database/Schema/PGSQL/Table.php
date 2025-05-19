@@ -42,9 +42,9 @@ class Table extends TableParent
         $primaryKeyName,
         array $primaryKeyColumns,
         ColumnManagementInterface $addIdentityColumn,
-        ColumnManagementInterface $changeIdentityColumn = null,
-        array $autoIncrementColumns = null,
-        ColumnManagementInterface $addAutoIncrementColumn = null
+        ?ColumnManagementInterface $changeIdentityColumn = null,
+        ?array $autoIncrementColumns = null,
+        ?ColumnManagementInterface $addAutoIncrementColumn = null
     ): string {
         if ($changeIdentityColumn === null) {
             return 'ALTER TABLE '.$this->getName().' ADD COLUMN '.$addIdentityColumn->getColumnDefinition();
@@ -62,7 +62,7 @@ class Table extends TableParent
      * @param ColumnManagementInterface|null $currentAutoIncrementColumn
      * @return string
      */
-    public function getDropIdentityStatement($primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, array $autoIncrementColumns = null, ColumnManagementInterface $currentAutoIncrementColumn = null): string
+    public function getDropIdentityStatement($primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $currentAutoIncrementColumn = null): string
     {
         return 'ALTER TABLE '.$this->getName().' ALTER COLUMN '.$dropIdentityColumn->getName().' DROP IDENTITY';
     }
@@ -139,7 +139,7 @@ class Table extends TableParent
      * @param ColumnManagementInterface|null $targetSchemaIdentityColumn
      * @return string
      */
-    public function getRecreatePrimaryKeyStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $targetSchemaIdentityColumn = null): string
+    public function getRecreatePrimaryKeyStatement(string $primaryKeyName, array $primaryKeyColumns, ?ColumnManagementInterface $targetSchemaIdentityColumn = null): string
     {
         if (empty($primaryKeyColumns) && !empty($primaryKeyName)) {
             return 'ALTER TABLE '.$this->getName().' DROP CONSTRAINT '.$primaryKeyName;
