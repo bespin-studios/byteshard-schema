@@ -1,3 +1,11 @@
+## [1.3.5](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.4...v1.3.5) (2025-05-21)
+
+
+### Bug Fixes
+
+* pipeline and php 8.4 warnings ([17bb839](https://github.com/bespin-studios/byteshard-schema/commit/17bb8393d3c22fbf7340f96467e500892c24f4dc))
+* use separate return values for the bind_params with better typing ([2970db2](https://github.com/bespin-studios/byteshard-schema/commit/2970db200941710010d85e5b28478e5e24be8834))
+
 ## [1.3.4](https://github.com/byteshard/schema/compare/v1.3.3...v1.3.4) (2024-04-24)
 
 
