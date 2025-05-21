@@ -492,7 +492,8 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             } elseif ($connection instanceof mysqli) {
                 $statement = $connection->prepare($query);
                 if ($statement !== false) {
-                    $statement->bind_param(...$this->getBindArguments($params));
+                    list($types, $params) = $this->getBindArguments($params);
+                    $statement->bind_param($types, ...$params);
                     $statement->execute();
                 }
             }
@@ -547,7 +548,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
 
     /**
      * @param array<string, string|bool|int|float> $data
-     * @return array<string>
+     * @return array{0: string, 1: array<string|int|float>}
      */
     private function getBindArguments(array $data): array
     {
@@ -570,8 +571,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             },
             ''
         );
-        array_unshift($columns, $types);
-        return array_map('strval', $columns);
+        return [$types, $columns];
     }
 
     /**
