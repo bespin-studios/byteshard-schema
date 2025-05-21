@@ -3,6 +3,7 @@
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
  */
+
 /** @noinspection SqlResolve */
 /** @noinspection SqlNoDataSourceInspection */
 
@@ -37,8 +38,8 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
     /**
      * @var array<string>
      */
-    private array   $dryRunCommands;
-    private ?string $tableSchema;
+    private array  $dryRunCommands;
+    private string $tableSchema;
 
     public function __construct(BaseConnection $connection, string $database, ?string $schema = null)
     {
@@ -491,7 +492,8 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             } elseif ($connection instanceof mysqli) {
                 $statement = $connection->prepare($query);
                 if ($statement !== false) {
-                    $statement->bind_param(...$this->getBindArguments($params));
+                    list($types, $params) = $this->getBindArguments($params);
+                    $statement->bind_param($types, ...$params);
                     $statement->execute();
                 }
             }
@@ -546,7 +548,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
 
     /**
      * @param array<string, string|bool|int|float> $data
-     * @return array<string>
+     * @return array{0: string, 1: array<string|int|float>}
      */
     private function getBindArguments(array $data): array
     {
@@ -562,17 +564,14 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                     $string .= 'd';
                 } elseif (is_int($arg)) {
                     $string .= 'i';
-                } elseif (is_string($arg)) {
-                    $string .= 's';
                 } else {
-                    $string .= 'b';
+                    $string .= 's';
                 }
                 return $string;
             },
             ''
         );
-        array_unshift($columns, $types);
-        return $columns;
+        return [$types, $columns];
     }
 
     /**
@@ -591,7 +590,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
 
     private function getTableSchema(): string
     {
-        if ($this->tableSchema === null || $this->tableSchema === '') {
+        if ($this->tableSchema === '') {
             $this->tableSchema = $this->connection->getDB();
         }
         return $this->tableSchema;

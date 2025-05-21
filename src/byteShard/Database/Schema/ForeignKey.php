@@ -13,7 +13,7 @@ class ForeignKey
     private string $column;
     private ?string $name;
 
-    public function __construct(Column|string $column, string $targetTable, string $targetColumn, string $name = null)
+    public function __construct(Column|string $column, string $targetTable, string $targetColumn, ?string $name = null)
     {
         $this->column       = ($column instanceof Column) ? $column->getName() : $column;
         $this->targetColumn = $targetColumn;
