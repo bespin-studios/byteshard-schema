@@ -54,35 +54,42 @@ class Setup
     private array                  $changes      = [];
     private ?DBManagementInterface $dbManagement = null;
 
+    /**
+     * @throws Exception
+     */
     public function __construct(Environment $environment)
     {
-        if (class_exists('\config')) {
-            $config                   = new \config();
-            $appDbParameters          = $config->getDbParameters(Database\Enum\ConnectionType::ADMIN);
-            $this->server             = $appDbParameters->server;
-            $this->db                 = $appDbParameters->database;
-            $this->schema             = $appDbParameters->schema;
-            $this->password           = new Password();
-            $this->password->password = $appDbParameters->password;
-            $this->user               = $appDbParameters->username;
-            if (isset($_SESSION) && !isset($_SESSION['SETUP'], $_SESSION['SETUP']['Init'])) {
-                session_destroy();
-            }
-            if (!isset($_SESSION)) {
-                ini_set('session.use_only_cookies', 1);
-                ini_set('session.cookie_httponly', 1);
-                ini_set('session.cookie_secure', 1);
-
-                session_cache_limiter('nocache');
-                session_start();
-                if (!isset($_SESSION['SETUP'], $_SESSION['SETUP']['Init'])) {
-                    $_SESSION['SETUP']['Init'] = false;
-                }
-            }
-            $this->environment      = $environment;
-            $this->showAdminUseCase = $environment->isLocalAuthenticationEnabled();
-            $this->processPostFields();
+        if (!class_exists('\config')) {
+            throw new Exception('Config class not found');
         }
+        $config                   = new \config();
+        $appDbParameters          = $config->getDbParameters(Database\Enum\ConnectionType::ADMIN);
+        $this->server             = $appDbParameters->server;
+        $this->db                 = $appDbParameters->database;
+        $this->schema             = $appDbParameters->schema;
+        $this->password           = new Password();
+        $this->password->password = $appDbParameters->password;
+        $this->user               = $appDbParameters->username;
+        if (isset($_SESSION) && !isset($_SESSION['SETUP']) || isset($_SESSION['SETUP']) && is_array($_SESSION['SETUP']) && !isset($_SESSION['SETUP']['Init'])) {
+            session_destroy();
+        }
+        if (!isset($_SESSION)) {
+            ini_set('session.use_only_cookies', 1);
+            ini_set('session.cookie_httponly', 1);
+            ini_set('session.cookie_secure', 1);
+
+            session_cache_limiter('nocache');
+            session_start();
+            if (!isset($_SESSION['SETUP']) || !is_array($_SESSION['SETUP'])) {
+                $_SESSION['SETUP'] = [];
+            }
+            if (!isset($_SESSION['SETUP']['Init'])) {
+                $_SESSION['SETUP']['Init'] = false;
+            }
+        }
+        $this->environment      = $environment;
+        $this->showAdminUseCase = $environment->isLocalAuthenticationEnabled();
+        $this->processPostFields();
     }
 
     /**
@@ -127,7 +134,12 @@ class Setup
             return 'logout';
         }
         // if init is incomplete, return to the login screen
-        if ($_SESSION['SETUP']['Init'] === false) {
+        if (
+            !isset($_SESSION['SETUP']) ||
+            is_array($_SESSION['SETUP']) &&
+            array_key_exists('Init', $_SESSION['SETUP']) &&
+            $_SESSION['SETUP']['Init'] === false
+        ) {
             return 'logout';
         }
         // if the db name is invalid, return to the login screen
@@ -238,7 +250,7 @@ class Setup
 
     private function getDBParameters(): Parameters
     {
-        // parameters with empty database. We're trying to establish a connection first and then check if the database exists
+        // parameters with an empty database. We're trying to establish a connection first and then check if the database exists
         $parameters           = new Database\Struct\Parameters();
         $parameters->username = $this->user;
         $parameters->password = $this->password;
@@ -249,7 +261,16 @@ class Setup
 
     private function processPostFields(): void
     {
-        if ($_SESSION['SETUP']['Init'] === false && (isset($_POST['user'], $_POST['pass'], $_POST['server'], $_POST['db']) && !empty($_POST['user']) && !empty($_POST['pass']) && !empty($_POST['server']) && !empty($_POST['db']))) {
+        if (
+            isset($_SESSION['SETUP']) && is_array($_SESSION['SETUP']) &&
+            array_key_exists('Init', $_SESSION['SETUP']) &&
+            $_SESSION['SETUP']['Init'] === false &&
+            !empty($_POST['user']) && !empty($_POST['pass']) && !empty($_POST['server']) && !empty($_POST['db'])
+        ) {
+            if (!isset($_SESSION['SETUP']['DB']) || !is_array($_SESSION['SETUP']['DB'])) {
+                $_SESSION['SETUP']['DB'] = [];
+            }
+
             $_SESSION['SETUP']['DB']['User']   = $_POST['user'];
             $_SESSION['SETUP']['DB']['Pass']   = $_POST['pass'];
             $_SESSION['SETUP']['DB']['Server'] = $_POST['server'];
@@ -257,7 +278,20 @@ class Setup
             $_SESSION['SETUP']['DB']['Schema'] = $_POST['schema'] ?? '';
             $_SESSION['SETUP']['Init']         = true;
         }
-        if ($_SESSION['SETUP']['Init'] === true) {
+        if (
+            isset($_SESSION['SETUP'])
+            && is_array($_SESSION['SETUP'])
+            && isset($_SESSION['SETUP']['DB'])
+            && is_array($_SESSION['SETUP']['DB'])
+            && isset($_SESSION['SETUP']['Init'])
+            && $_SESSION['SETUP']['Init'] === true
+            && isset($_SESSION['SETUP']['DB']['User'], $_SESSION['SETUP']['DB']['Pass'], $_SESSION['SETUP']['DB']['Server'], $_SESSION['SETUP']['DB']['DB'], $_SESSION['SETUP']['DB']['Schema'])
+            && is_string($_SESSION['SETUP']['DB']['User'])
+            && is_string($_SESSION['SETUP']['DB']['Pass'])
+            && is_string($_SESSION['SETUP']['DB']['Server'])
+            && is_string($_SESSION['SETUP']['DB']['DB'])
+            && is_string($_SESSION['SETUP']['DB']['Schema'])
+        ) {
             $this->db                 = $_SESSION['SETUP']['DB']['DB'];
             $this->schema             = $_SESSION['SETUP']['DB']['Schema'];
             $this->server             = $_SESSION['SETUP']['DB']['Server'];
@@ -274,7 +308,7 @@ class Setup
     {
         return $this->ensureDbSchemaVersion($dbManagement, true);
     }
-    
+
     private function getUserTableSchema(): UserTable
     {
         if ($this->environment instanceof OverrideDataModelInterface) {
@@ -351,7 +385,10 @@ class Setup
     private function insertAdmin(): void
     {
         if (isset($_POST['adminUser'], $_POST['adminPass']) && !empty($_POST['adminUser']) && !empty($_POST['adminPass'])) {
-            $username           = $_POST['adminUser'];
+            $username = $_POST['adminUser'];
+            if (!is_string($username)) {
+                throw new Exception('Invalid username');
+            }
             $password           = new Password();
             $password->password = $_POST['adminPass'];
             $userSchema         = $this->getUserTableSchema();
@@ -548,7 +585,7 @@ class Setup
 
         $this->dbManagement = match ($dbDriver) {
             Environment::DRIVER_PGSQL_PDO => new PgsqlDBManagement($cn, $this->db, $this->schema),
-            default                       => new MysqlDBManagement($cn, $this->db),
+            default => new MysqlDBManagement($cn, $this->db),
         };
     }
 
@@ -569,7 +606,7 @@ class Setup
             global $dbDriver;
             return match ($dbDriver) {
                 Environment::DRIVER_PGSQL_PDO => new PgsqlStateManagement($this->dbManagement, $state),
-                default                       => new MysqlStateManagement($this->dbManagement, $state)
+                default => new MysqlStateManagement($this->dbManagement, $state)
             };
         }
         return null;

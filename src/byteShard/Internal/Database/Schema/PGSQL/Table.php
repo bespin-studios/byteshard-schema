@@ -55,14 +55,14 @@ class Table extends TableParent
     }
 
     /**
-     * @param string $primaryKeyName
+     * @param $primaryKeyName
      * @param array<ColumnManagementInterface> $primaryKeyColumns
      * @param ColumnManagementInterface $dropIdentityColumn
      * @param array<ColumnManagementInterface>|null $autoIncrementColumns
-     * @param ColumnManagementInterface|null $dropAutoIncrementColumn
+     * @param ColumnManagementInterface|null $currentAutoIncrementColumn
      * @return string
      */
-    public function getDropIdentityStatement(string $primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $dropAutoIncrementColumn = null): string
+    public function getDropIdentityStatement($primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $currentAutoIncrementColumn = null): string
     {
         return 'ALTER TABLE '.$this->getName().' ALTER COLUMN '.$dropIdentityColumn->getName().' DROP IDENTITY';
     }
