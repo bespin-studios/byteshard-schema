@@ -186,6 +186,9 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::TIME:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::TIME';
                 break;
+            case Enum\DB\ColumnType::TEXT:
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::TEXT';
+                break;
             case Enum\DB\ColumnType::LONGTEXT:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::LONGTEXT';
                 break;
