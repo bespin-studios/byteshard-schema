@@ -1,3 +1,16 @@
+## [1.3.6](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.5...v1.3.6) (2025-05-27)
+
+
+### Bug Fixes
+
+* add missing text column type for code generation ([71b5ddf](https://github.com/bespin-studios/byteshard-schema/commit/71b5ddf0520938c9b6a8e3f571ca57a79d99fed8))
+* remove php 8.4 deprecations ([bec449d](https://github.com/bespin-studios/byteshard-schema/commit/bec449df6e1648c4d8b6409c76413e8b71adbab0))
+
+
+### Performance Improvements
+
+* update dependencies ([9f184d8](https://github.com/bespin-studios/byteshard-schema/commit/9f184d833531dcc279d36f5b386ac0c88eae78ad))
+
 ## [1.3.5](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.4...v1.3.5) (2025-05-21)
 
 
