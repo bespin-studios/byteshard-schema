@@ -59,10 +59,10 @@ class Table extends TableParent
      * @param array<ColumnManagementInterface> $primaryKeyColumns
      * @param ColumnManagementInterface $dropIdentityColumn
      * @param array<ColumnManagementInterface>|null $autoIncrementColumns
-     * @param ColumnManagementInterface|null $currentAutoIncrementColumn
+     * @param ColumnManagementInterface|null $dropAutoIncrementColumn
      * @return string
      */
-    public function getDropIdentityStatement($primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $currentAutoIncrementColumn = null): string
+    public function getDropIdentityStatement($primaryKeyName, array $primaryKeyColumns, ColumnManagementInterface $dropIdentityColumn, ?array $autoIncrementColumns = null, ?ColumnManagementInterface $dropAutoIncrementColumn = null): string
     {
         return 'ALTER TABLE '.$this->getName().' ALTER COLUMN '.$dropIdentityColumn->getName().' DROP IDENTITY';
     }

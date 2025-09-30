@@ -70,12 +70,15 @@ class Column extends ColumnParent
         $columnTypeDefinition .= empty($columnLength) ? '' : ' '.trim($columnLength);
         if ($update === false) {
             $statements[] = $columnTypeDefinition;
-            $statements[] = $this->isNullable() === false ? 'NOT NULL' : 'NULL';
+            if ($this->isIdentity() === true) {
+                $statements[] = 'GENERATED ALWAYS AS IDENTITY';
+            } else {
+                $statements[] = $this->isNullable() === false ? 'NOT NULL' : 'NULL';
+            }
         } else {
             $statements[] = 'TYPE '.$columnTypeDefinition;
             $statements[] = $this->isNullable() === false ? 'SET NOT NULL' : 'DROP NOT NULL';
         }
-        $statements[] = $identity === true && $this->isIdentity() === true ? 'GENERATED ALWAYS AS IDENTITY' : '';
 
         if ($this->getDefault() !== null) {
             if ($update === true) {
@@ -86,7 +89,7 @@ class Column extends ColumnParent
 
             $statements[] = $prefix.(Enum\DB\ColumnType::is_string($this->getType()) ? '\''.$this->getDefault().'\' ' : $this->getDefault());
         } else {
-            $statements[] = $update === true ? 'DROP DEFAULT' : '';
+            $statements[] = $update === true && !$this->isIdentity() ? 'DROP DEFAULT' : '';
         }
         $statements[] = $this->getComment() !== '' ? ' COMMENT \''.$this->getComment().'\'' : '';
         $statements   = array_filter($statements);
@@ -102,12 +105,11 @@ class Column extends ColumnParent
         return 'DROP COLUMN "'.$this->getName().'"';
     }
 
-    public function getSchema(int $length = 0): string
+    public function getSchema(): string
     {
         $optionalLength   = false;
         $optionalNullable = false;
-        $length           = $length - strlen($this->getName());
-        $schema           = '    new Column('."'".$this->getName()."'".str_repeat(' ', $length).',';
+        $schema           = '    new Column('."'".$this->getName()."',";
 
         switch ($this->getType()) {
             case Enum\DB\ColumnType::SMALLINT:
