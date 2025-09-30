@@ -1,3 +1,10 @@
+## [1.3.7](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.6...v1.3.7) (2025-09-30)
+
+
+### Bug Fixes
+
+* make it work with postgres 16 ([50337df](https://github.com/bespin-studios/byteshard-schema/commit/50337dfce22b813d3f1140e4c42ef0089314758f))
+
 ## [1.3.6](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.5...v1.3.6) (2025-05-27)
 
 
