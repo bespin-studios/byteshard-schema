@@ -81,8 +81,9 @@ class Column extends ColumnParent
             // auto increment cannot have default values
             $statement .= ' DEFAULT ';
             if ($this->getType()->isString()) {
-                if ($this->getDefault() === '\'\'') {
-                    $statement .= $this->getDefault();
+                $default = $this->getDefault();
+                if ($default === '\'\'' || strtolower(strval($default)) === 'current_timestamp()') {
+                    $statement .= $default;
                 } else {
                     $statement .= "'".$this->getDefault()."'";
                 }
