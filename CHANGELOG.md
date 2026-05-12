@@ -1,3 +1,10 @@
+## [1.3.8](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.7...v1.3.8) (2026-05-12)
+
+
+### Bug Fixes
+
+* add support for current_timestamp() in mysql/mariadb ([b3de8fc](https://github.com/bespin-studios/byteshard-schema/commit/b3de8fcb8bf8fab46419ca06bb1bc731351dd617))
+
 ## [1.3.7](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.6...v1.3.7) (2025-09-30)
 
 
