@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.8...v1.4.0) (2026-05-14)
+
+
+### Features
+
+* add charsets to mysql, support timestamp ([65844da](https://github.com/bespin-studios/byteshard-schema/commit/65844dab70a46be55879e6d3719c68396b3702f7))
+
 ## [1.3.8](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.7...v1.3.8) (2026-05-12)
 
 
