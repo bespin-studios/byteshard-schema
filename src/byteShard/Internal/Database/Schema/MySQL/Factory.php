@@ -28,6 +28,8 @@ class Factory
         }
         $mysqlColumn = new Column($column->getName(), $column->getNewName(), $column->getType(), $column->getLength(), $isNullable, $column->isPrimary(), $column->isIdentity(), $column->getDefault(), $column->getComment());
         $mysqlColumn->setCollate($collate);
+        $mysqlColumn->setCharacterSet($column->getCharset());
+        $mysqlColumn->setCheck($column->getCheck());
         return $mysqlColumn;
     }
 

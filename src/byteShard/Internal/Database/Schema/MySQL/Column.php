@@ -13,8 +13,19 @@ use byteShard\Internal\Database\Schema\ColumnParent;
 class Column extends ColumnParent
 {
     private string $collate = 'utf8mb4_unicode_ci';
+    private string $charset = '';
+    private string $check = '';
 
-    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(
+        string $name,
+        string $newName = '',
+        Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT,
+        int|string|null $length = null,
+        bool $isNullable = true,
+        bool $primary = false,
+        bool $identity = false,
+        string|int|null $default = null,
+        string $comment = '')
     {
         // Database specific transformations and default values
         switch ($type) {
@@ -62,6 +73,18 @@ class Column extends ColumnParent
         parent::__construct($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
+    public function setCharacterSet(string $charset): static
+    {
+        $this->charset = $charset;
+        return $this;
+    }
+
+    public function setCheck(string $check): static
+    {
+        $this->check = $check;
+        return $this;
+    }
+
     public function getAddColumnStatement(): string
     {
         //don't add auto increment and primary keys yet
@@ -73,6 +96,7 @@ class Column extends ColumnParent
         $statement = '`'.$this->getNewName().'` ';
         $statement .= $this->getColumnType($this->getType());
         $statement .= $this->getColumnLength($this->getType());
+        $statement .= $this->getCharacterSet();
         $statement .= $this->getColumnCollate($this->getType());
         $statement .= $this->isNullable() === false ? ' NOT NULL' : ' NULL';
         if ($identity === true && $this->isIdentity() === true) {
@@ -90,6 +114,7 @@ class Column extends ColumnParent
                 $statement .= $this->getDefault();
             }
         }
+        $statement .= $this->getCheck();
         $statement .= $this->getComment() !== '' ? ' COMMENT \''.$this->getComment().'\'' : '';
         return $statement;
     }
@@ -121,7 +146,7 @@ class Column extends ColumnParent
                         $properties[ColumnArguments::TYPE->value] = 'ColumnType::BOOL';
                     } else {
                         $properties[ColumnArguments::LENGTH->value] = $this->getLength();
-                        $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
+                        $properties[ColumnArguments::TYPE->value]   = 'ColumnType::TINYINT';
                     }
                 } else {
                     $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
@@ -192,6 +217,9 @@ class Column extends ColumnParent
             case Enum\DB\ColumnType::LONGTEXT:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::LONGTEXT';
                 break;
+            case Enum\DB\ColumnType::TIMESTAMP:
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::TIMESTAMP';
+                break;
             default:
                 print 'Unknown Column Type in '.get_class($this).': '.$this->getType()->value.' (11100001)';
                 exit;
@@ -233,6 +261,20 @@ class Column extends ColumnParent
     public function getUpdateColumnStatement(): string
     {
         return 'CHANGE `'.$this->getName().'` '.$this->getColumnDefinition();
+    }
+
+    private function getCharacterSet(): string {
+        if ($this->charset !== '') {
+            return ' CHARACTER SET '.$this->charset.' ';
+        }
+        return '';
+    }
+
+    private function getCheck(): string {
+        if ($this->check !== '') {
+            return ' CHECK '.$this->check.' ';
+        }
+        return '';
     }
 
     private function getColumnCollate(Enum\DB\ColumnType $type): string

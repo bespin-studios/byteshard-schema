@@ -24,6 +24,8 @@ class Column
     private bool               $primary;
     private Enum\DB\ColumnType $type;
     private ?string            $collate = null;
+    private string             $charset = '';
+    private string             $check   = '';
 
     public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, ?bool $nullable = null, bool $primary = false, bool $identity = false, string|int|null $default = null)
     {
@@ -105,5 +107,27 @@ class Column
     {
         $this->collate = $collate;
         return $this;
+    }
+
+    public function setCharacterSet(string $charset): static
+    {
+        $this->charset = $charset;
+        return $this;
+    }
+
+    public function getCharset(): string
+    {
+        return $this->charset;
+    }
+
+    public function setCheck(string $check): static
+    {
+        $this->check = $check;
+        return $this;
+    }
+
+    public function getCheck(): string
+    {
+        return $this->check;
     }
 }
