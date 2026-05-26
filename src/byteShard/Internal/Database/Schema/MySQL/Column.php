@@ -153,6 +153,9 @@ class Column extends ColumnParent
                     $properties[ColumnArguments::TYPE->value] = 'ColumnType::TINYINT';
                 }
                 break;
+            case Enum\DB\ColumnType::SMALLINT:
+                $properties[ColumnArguments::TYPE->value] = 'ColumnType::SMALLINT';
+                break;
             case Enum\DB\ColumnType::BOOL:
             case Enum\DB\ColumnType::BOOLEAN:
                 $properties[ColumnArguments::TYPE->value] = 'ColumnType::BOOL';
