@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/bespin-studios/byteshard-schema/compare/v1.4.0...v1.4.1) (2026-05-26)
+
+
+### Bug Fixes
+
+* add smallint ([602cc26](https://github.com/bespin-studios/byteshard-schema/commit/602cc2618efd41e4bd04f5cb80ebd06aeedb5eb3))
+
 # [1.4.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.3.8...v1.4.0) (2026-05-14)
 
 
