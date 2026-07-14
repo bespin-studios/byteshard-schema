@@ -306,7 +306,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
     public function getIndices(TableManagementInterface $table): array
     {
         $result       = [];
-        $indexRecords = Database::getArray('SHOW INDEXES FROM '.$table->getName().' WHERE NOT Key_name=\'PRIMARY\'');
+        $indexRecords = Database::getArray('SHOW INDEXES FROM `'.$table->getName().'` WHERE NOT Key_name=\'PRIMARY\'');
         $indices      = [];
         foreach ($indexRecords as $index) {
             if (!array_key_exists($index->Key_name, $indices)) {
