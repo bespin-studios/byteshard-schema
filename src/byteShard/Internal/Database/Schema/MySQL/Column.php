@@ -71,16 +71,6 @@ class Column extends ColumnParent
                 }
                 break;
         }
-        if ($isNullable === false && $default === null && $type->isNumeric()) {
-            $default = 0;
-        }
-        if ($isNullable === false && $default === null) {
-            if ($type->isNumeric()) {
-                $default = 0;
-            } elseif (!in_array($type, [Enum\DB\ColumnType::DATE, Enum\DB\ColumnType::DATETIME, Enum\DB\ColumnType::DATETIME2])) {
-                $default = "''";
-            }
-        }
         parent::__construct($name, $newName, $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
