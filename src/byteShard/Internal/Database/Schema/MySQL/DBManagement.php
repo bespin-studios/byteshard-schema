@@ -9,6 +9,7 @@
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 use byteShard\Database;
 use byteShard\Environment;
@@ -87,6 +88,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
 
         $tmp = Database::getArray('SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
         foreach ($tmp as $val) {
+            $extra = is_string($val->EXTRA ?? null) ? strtolower($val->EXTRA) : '';
             switch ($val->DATA_TYPE) {
                 case 'tinyint': //boolean
                     $type = Enum\DB\ColumnType::TINYINT;
@@ -245,9 +247,19 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                         break;
                 }
             }
+            // map function defaults (unquoted in information_schema, literals are quoted) to the enum,
+            // unknown function defaults become RawDefault
+            if (is_string($default) && $default !== '' && !str_starts_with($default, '\'')) {
+                $mapped = Column::mapLegacyDefault($default);
+                if ($mapped !== null) {
+                    $default = $mapped;
+                } elseif (str_contains($default, '(')) {
+                    $default = new RawDefault($default);
+                }
+            }
             // generated (computed) columns: MariaDB sets IS_GENERATED='ALWAYS', MySQL sets EXTRA='... GENERATED'
-            $isGenerated = (isset($val->IS_GENERATED) && strtoupper((string)$val->IS_GENERATED) === 'ALWAYS')
-                || stripos($val->EXTRA, 'generated') !== false;
+            $isGenerated = strtoupper(strval($val->IS_GENERATED ?? '')) === 'ALWAYS'
+                || str_contains($extra, 'generated');
             if ($isGenerated === true) {
                 // generated columns cannot have default values
                 $default = null;
@@ -259,7 +271,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                 $length,
                 $val->IS_NULLABLE === 'YES',
                 array_key_exists($val->COLUMN_NAME, $primary_keys),
-                stripos($val->EXTRA, 'auto_increment') !== false,
+                str_contains($extra, 'auto_increment'),
                 $default
             );
             if (!empty($val->COLLATION_NAME)) {
@@ -269,13 +281,14 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                     $column->setCharacterSet($val->CHARACTER_SET_NAME);
                 }
             }
-            if (stripos($val->EXTRA, 'on update current_timestamp') !== false) {
+            if (str_contains($extra, 'on update current_timestamp')) {
                 $column->setOnUpdate('current_timestamp()');
             }
-            if ($isGenerated === true && !empty($val->GENERATION_EXPRESSION)) {
+            $generationExpression = strval($val->GENERATION_EXPRESSION ?? '');
+            if ($isGenerated === true && $generationExpression !== '') {
                 $column->setGeneratedAs(
-                    (string)$val->GENERATION_EXPRESSION,
-                    stripos($val->EXTRA, 'stored') !== false || stripos($val->EXTRA, 'persistent') !== false
+                    $generationExpression,
+                    str_contains($extra, 'stored') || str_contains($extra, 'persistent')
                 );
             }
             if (array_key_exists($val->COLUMN_NAME, $checkClauses)) {
