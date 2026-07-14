@@ -6,15 +6,22 @@
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
+use byteShard\Database\Enum\DefaultValue;
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 use byteShard\Internal\Database\Schema\ColumnArguments;
+use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ColumnParent;
 
 class Column extends ColumnParent
 {
-    private string $collate = 'utf8mb4_unicode_ci';
-    private string $charset = '';
-    private string $check = '';
+    private string  $collate         = 'utf8mb4_unicode_ci';
+    private ?string $tableCollate    = null;
+    private string  $charset         = '';
+    private string  $check           = '';
+    private ?string $onUpdate        = null;
+    private ?string $generatedAs     = null;
+    private bool    $generatedStored = false;
 
     public function __construct(
         string $name,
@@ -24,9 +31,13 @@ class Column extends ColumnParent
         bool $isNullable = true,
         bool $primary = false,
         bool $identity = false,
-        string|int|null $default = null,
+        string|int|null|DefaultValue|RawDefault $default = null,
         string $comment = '')
     {
+        // legacy support: map magic strings like 'current_timestamp()' to the DefaultValue enum
+        if (is_string($default)) {
+            $default = self::mapLegacyDefault($default) ?? $default;
+        }
         // Database specific transformations and default values
         switch ($type) {
             case Enum\DB\ColumnType::BOOL:
@@ -85,6 +96,49 @@ class Column extends ColumnParent
         return $this;
     }
 
+    public function getCheck(): string
+    {
+        return $this->check;
+    }
+
+    public function setOnUpdate(?string $expression): static
+    {
+        $this->onUpdate = $expression;
+        return $this;
+    }
+
+    public function getOnUpdate(): ?string
+    {
+        return $this->onUpdate;
+    }
+
+    public function setGeneratedAs(string $expression, bool $stored = false): static
+    {
+        $this->generatedAs     = $expression;
+        $this->generatedStored = $stored;
+        return $this;
+    }
+
+    public function getGeneratedAs(): ?string
+    {
+        return $this->generatedAs;
+    }
+
+    public function isGeneratedStored(): bool
+    {
+        return $this->generatedStored;
+    }
+
+    /**
+     * collation of the table this column belongs to.
+     * Used by getSchema() to only emit setCollate() for columns which deviate from their table.
+     */
+    public function setTableCollate(string $collate): static
+    {
+        $this->tableCollate = $collate;
+        return $this;
+    }
+
     public function getAddColumnStatement(): string
     {
         //don't add auto increment and primary keys yet
@@ -98,24 +152,24 @@ class Column extends ColumnParent
         $statement .= $this->getColumnLength($this->getType());
         $statement .= $this->getCharacterSet();
         $statement .= $this->getColumnCollate($this->getType());
+        if ($this->generatedAs !== null) {
+            // generated columns cannot have NULL/NOT NULL, DEFAULT, AUTO_INCREMENT or ON UPDATE clauses
+            $statement .= ' GENERATED ALWAYS AS ('.$this->generatedAs.') '.($this->generatedStored ? 'STORED' : 'VIRTUAL');
+            $statement .= $this->getCheckClause();
+            $statement .= $this->getComment() !== '' ? ' COMMENT \''.$this->getComment().'\'' : '';
+            return $statement;
+        }
         $statement .= $this->isNullable() === false ? ' NOT NULL' : ' NULL';
         if ($identity === true && $this->isIdentity() === true) {
             $statement .= ' AUTO_INCREMENT';
         } elseif ($this->getDefault() !== null) {
             // auto increment cannot have default values
-            $statement .= ' DEFAULT ';
-            if ($this->getType()->isString()) {
-                $default = $this->getDefault();
-                if ($default === '\'\'' || strtolower(strval($default)) === 'current_timestamp()') {
-                    $statement .= $default;
-                } else {
-                    $statement .= "'".$this->getDefault()."'";
-                }
-            } else {
-                $statement .= $this->getDefault();
-            }
+            $statement .= ' DEFAULT '.$this->getDefaultClause();
         }
-        $statement .= $this->getCheck();
+        if ($this->onUpdate !== null) {
+            $statement .= ' ON UPDATE '.$this->onUpdate;
+        }
+        $statement .= $this->getCheckClause();
         $statement .= $this->getComment() !== '' ? ' COMMENT \''.$this->getComment().'\'' : '';
         return $statement;
     }
@@ -123,6 +177,44 @@ class Column extends ColumnParent
     public function getDropColumnStatement(): string
     {
         return 'DROP COLUMN `'.$this->getName().'`';
+    }
+
+    public function isNotIdenticalTo(ColumnManagementInterface $column): bool
+    {
+        if (parent::isNotIdenticalTo($column) === true) {
+            return true;
+        }
+        if ($column instanceof self) {
+            if ($this->getType()->isString() && $column->getCollate() !== $this->collate) {
+                return true;
+            }
+            if ($this->normalizeExpression($column->getCheck()) !== $this->normalizeExpression($this->check)) {
+                return true;
+            }
+            if (strtolower($column->getOnUpdate() ?? '') !== strtolower($this->onUpdate ?? '')) {
+                return true;
+            }
+            if ($this->normalizeExpression($column->getGeneratedAs() ?? '') !== $this->normalizeExpression($this->generatedAs ?? '')) {
+                return true;
+            }
+            if ($column->getGeneratedAs() !== null && $this->generatedAs !== null && $column->isGeneratedStored() !== $this->generatedStored) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * MariaDB normalizes expressions (backticks, whitespace, lowercase function names) before storing them
+     * in information_schema. Normalize both sides to avoid perpetual ALTER statements.
+     */
+    private function normalizeExpression(string $expression): string
+    {
+        $expression = strtolower(str_replace(['`', ' '], '', trim($expression)));
+        while (str_starts_with($expression, '(') && str_ends_with($expression, ')')) {
+            $expression = substr($expression, 1, -1);
+        }
+        return $expression;
     }
 
     public function getSchema(): string
@@ -242,16 +334,23 @@ class Column extends ColumnParent
         if ($this->isIdentity() === true) {
             $properties[ColumnArguments::IDENTITY->value] = 'true';
         }
-        if ($this->getDefault() !== null) {
+        $default = $this->getDefault();
+        if ($default instanceof DefaultValue) {
+            // function defaults are always emitted, they are meaningful on nullable columns too
+            $properties[ColumnArguments::DEFAULT->value] = 'DefaultValue::'.$default->name;
+        } elseif ($default instanceof RawDefault) {
+            $properties[ColumnArguments::DEFAULT->value] = 'new RawDefault('.var_export($default->getExpression(), true).')';
+        } elseif ($default !== null) {
             // a default with 0 is not mandatory for numeric columns since it's set as the default for non-nullable columns anyway
             if ($this->isNullable() === false) {
                 if ($this->getType()->isNumeric()) {
-                    if ($this->getDefault() !== 0) {
-                        $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    if ($default !== 0) {
+                        $properties[ColumnArguments::DEFAULT->value] = $default;
                     }
                 } else {
-                    if ($this->getDefault() !== "''") {
-                        $properties[ColumnArguments::DEFAULT->value] = $this->getDefault();
+                    if ($default !== "''") {
+                        // quote non-numeric defaults so the generated PHP code is valid
+                        $properties[ColumnArguments::DEFAULT->value] = var_export(strval($default), true);
                     }
                 }
             }
@@ -259,7 +358,27 @@ class Column extends ColumnParent
         array_walk($properties, function (&$value, $key) {
             $value = $key.': '.$value;
         });
-        return 'new Column('.implode(', ', $properties).')';
+        $schema  = 'new Column('.implode(', ', $properties).')';
+        $setters = [];
+        if ($this->getType()->isString() && $this->tableCollate !== null && $this->tableCollate !== '' && $this->collate !== $this->tableCollate) {
+            if ($this->charset !== '') {
+                $setters[] = 'setCharacterSet('.var_export($this->charset, true).')';
+            }
+            $setters[] = 'setCollate('.var_export($this->collate, true).')';
+        }
+        if ($this->check !== '') {
+            $setters[] = 'setCheck('.var_export($this->check, true).')';
+        }
+        if ($this->onUpdate !== null) {
+            $setters[] = 'setOnUpdate('.var_export($this->onUpdate, true).')';
+        }
+        if ($this->generatedAs !== null) {
+            $setters[] = 'setGeneratedAs('.var_export($this->generatedAs, true).($this->generatedStored ? ', true' : '').')';
+        }
+        if (!empty($setters)) {
+            return '('.$schema.')->'.implode('->', $setters);
+        }
+        return $schema;
     }
 
     public function getUpdateColumnStatement(): string
@@ -267,18 +386,59 @@ class Column extends ColumnParent
         return 'CHANGE `'.$this->getName().'` '.$this->getColumnDefinition();
     }
 
-    private function getCharacterSet(): string {
+    private function getCharacterSet(): string
+    {
         if ($this->charset !== '') {
-            return ' CHARACTER SET '.$this->charset.' ';
+            return ' CHARACTER SET '.$this->charset;
         }
         return '';
     }
 
-    private function getCheck(): string {
-        if ($this->check !== '') {
-            return ' CHECK '.$this->check.' ';
+    /**
+     * translate the default to MariaDB/MySQL syntax
+     */
+    private function getDefaultClause(): string
+    {
+        $default = $this->getDefault();
+        if ($default instanceof DefaultValue) {
+            return match ($default) {
+                DefaultValue::CURRENT_TIMESTAMP => 'current_timestamp()',
+                DefaultValue::CURRENT_DATE      => 'curdate()',
+                DefaultValue::CURRENT_TIME      => 'curtime()',
+                DefaultValue::UUID              => 'uuid()',
+            };
         }
-        return '';
+        if ($default instanceof RawDefault) {
+            return $default->getExpression();
+        }
+        if ($this->getType()->isString()) {
+            if ($default === '\'\'') {
+                return $default;
+            }
+            return "'".$default."'";
+        }
+        return strval($default);
+    }
+
+    /**
+     * map legacy magic strings ('current_timestamp()', 'now()', ...) to the DefaultValue enum
+     * so existing schema definitions keep working
+     */
+    public static function mapLegacyDefault(string $default): ?DefaultValue
+    {
+        return DefaultValue::tryFromExpression($default);
+    }
+
+    private function getCheckClause(): string
+    {
+        if ($this->check === '') {
+            return '';
+        }
+        $check = trim($this->check);
+        if (!str_starts_with($check, '(')) {
+            $check = '('.$check.')';
+        }
+        return ' CHECK '.$check;
     }
 
     private function getColumnCollate(Enum\DB\ColumnType $type): string

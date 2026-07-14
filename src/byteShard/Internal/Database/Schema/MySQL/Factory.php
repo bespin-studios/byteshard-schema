@@ -18,7 +18,10 @@ class Factory
     {
         $isNullable = $column->isNullable();
         if ($isNullable === null) {
-            if ($column->getType()->isNumeric()) {
+            if ($column->getGeneratedAs() !== null) {
+                // generated columns cannot have a NOT NULL constraint
+                $isNullable = true;
+            } elseif ($column->getType()->isNumeric()) {
                 $isNullable = false;
             } elseif ($column->getType() === Enum\DB\ColumnType::BOOL || $column->getType() === Enum\DB\ColumnType::BOOLEAN) {
                 $isNullable = false;
@@ -26,10 +29,21 @@ class Factory
                 $isNullable = true;
             }
         }
-        $mysqlColumn = new Column($column->getName(), $column->getNewName(), $column->getType(), $column->getLength(), $isNullable, $column->isPrimary(), $column->isIdentity(), $column->getDefault(), $column->getComment());
+        $default = $column->getDefault();
+        if ($column->getGeneratedAs() !== null) {
+            // generated columns cannot have default values
+            $default = null;
+        }
+        $mysqlColumn = new Column($column->getName(), $column->getNewName(), $column->getType(), $column->getLength(), $isNullable, $column->isPrimary(), $column->isIdentity(), $default, $column->getComment());
         $mysqlColumn->setCollate($collate);
         $mysqlColumn->setCharacterSet($column->getCharset());
         $mysqlColumn->setCheck($column->getCheck());
+        if ($column->getOnUpdate() !== null) {
+            $mysqlColumn->setOnUpdate($column->getOnUpdate());
+        }
+        if ($column->getGeneratedAs() !== null) {
+            $mysqlColumn->setGeneratedAs($column->getGeneratedAs(), $column->isGeneratedStored());
+        }
         return $mysqlColumn;
     }
 

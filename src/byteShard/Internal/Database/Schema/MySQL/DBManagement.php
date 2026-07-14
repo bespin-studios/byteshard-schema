@@ -9,6 +9,7 @@
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 use byteShard\Database;
 use byteShard\Environment;
@@ -70,8 +71,24 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
     {
         $columns      = [];
         $primary_keys = $this->getPrimaryKeyColumns($table);
-        $tmp          = Database::getArray('SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+
+        // table collation, used to detect columns with a deviating collation
+        $tableCollation = '';
+        $tableRecord    = Database::getArray('SELECT `TABLE_COLLATION` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+        if (!empty($tableRecord) && isset($tableRecord[0]->TABLE_COLLATION)) {
+            $tableCollation = (string)$tableRecord[0]->TABLE_COLLATION;
+        }
+
+        // column level check constraints (MariaDB stores them with CONSTRAINT_NAME = column name)
+        $checkClauses = [];
+        $checkRecords = Database::getArray('SELECT `CONSTRAINT_NAME`, `CHECK_CLAUSE` FROM `information_schema`.`CHECK_CONSTRAINTS` WHERE `CONSTRAINT_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+        foreach ($checkRecords as $checkRecord) {
+            $checkClauses[$checkRecord->CONSTRAINT_NAME] = $checkRecord->CHECK_CLAUSE;
+        }
+
+        $tmp = Database::getArray('SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
         foreach ($tmp as $val) {
+            $extra = is_string($val->EXTRA ?? null) ? strtolower($val->EXTRA) : '';
             switch ($val->DATA_TYPE) {
                 case 'tinyint': //boolean
                     $type = Enum\DB\ColumnType::TINYINT;
@@ -230,16 +247,54 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                         break;
                 }
             }
-            $columns[$val->COLUMN_NAME] = new Column(
+            // map function defaults (unquoted in information_schema, literals are quoted) to the enum,
+            // unknown function defaults become RawDefault
+            if (is_string($default) && !str_starts_with($default, '\'')) {
+                $mapped = Column::mapLegacyDefault($default);
+                if ($mapped !== null) {
+                    $default = $mapped;
+                } elseif (str_contains($default, '(')) {
+                    $default = new RawDefault($default);
+                }
+            }
+            // generated (computed) columns: MariaDB sets IS_GENERATED='ALWAYS', MySQL sets EXTRA='... GENERATED'
+            $isGenerated = strtoupper(strval($val->IS_GENERATED ?? '')) === 'ALWAYS'
+                || str_contains($extra, 'generated');
+            if ($isGenerated === true) {
+                // generated columns cannot have default values
+                $default = null;
+            }
+            $column = new Column(
                 $val->COLUMN_NAME,
                 $val->COLUMN_NAME,
                 $type,
                 $length,
                 $val->IS_NULLABLE === 'YES',
                 array_key_exists($val->COLUMN_NAME, $primary_keys),
-                stripos($val->EXTRA, 'auto_increment') !== false,
+                str_contains($extra, 'auto_increment'),
                 $default
             );
+            if (!empty($val->COLLATION_NAME)) {
+                $column->setCollate($val->COLLATION_NAME);
+                $column->setTableCollate($tableCollation);
+                if ($val->COLLATION_NAME !== $tableCollation && !empty($val->CHARACTER_SET_NAME)) {
+                    $column->setCharacterSet($val->CHARACTER_SET_NAME);
+                }
+            }
+            if (str_contains($extra, 'on update current_timestamp')) {
+                $column->setOnUpdate('current_timestamp()');
+            }
+            $generationExpression = strval($val->GENERATION_EXPRESSION ?? '');
+            if ($isGenerated === true && $generationExpression !== '') {
+                $column->setGeneratedAs(
+                    $generationExpression,
+                    str_contains($extra, 'stored') || str_contains($extra, 'persistent')
+                );
+            }
+            if (array_key_exists($val->COLUMN_NAME, $checkClauses)) {
+                $column->setCheck($checkClauses[$val->COLUMN_NAME]);
+            }
+            $columns[$val->COLUMN_NAME] = $column;
         }
         return $columns;
     }
