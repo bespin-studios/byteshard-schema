@@ -1,3 +1,15 @@
+# [1.6.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.5.0...v1.6.0) (2026-07-14)
+
+
+### Bug Fixes
+
+* escape table names ([9d95097](https://github.com/bespin-studios/byteshard-schema/commit/9d950975200e97e11bdb4d062a30268174309248))
+
+
+### Features
+
+* don't assume default defaults ([165c1ed](https://github.com/bespin-studios/byteshard-schema/commit/165c1ed31c4d32c387c4274c42245dcf769c2662))
+
 # [1.5.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.4.1...v1.5.0) (2026-07-14)
 
 
