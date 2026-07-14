@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.4.1...v1.5.0) (2026-07-14)
+
+
+### Features
+
+* add default enums, generated, check, collate to columns ([5596976](https://github.com/bespin-studios/byteshard-schema/commit/55969762c61f0e9410d4f77a63726cb3c4be985e))
+* add default enums, generated, check, collate to columns ([74baad8](https://github.com/bespin-studios/byteshard-schema/commit/74baad8d2771d096da24c7c5538f583751f9edda))
+* add default enums, generated, check, collate to columns ([c5e9786](https://github.com/bespin-studios/byteshard-schema/commit/c5e97862b81a566784c8bafc509a603022289dd8))
+
 ## [1.4.1](https://github.com/bespin-studios/byteshard-schema/compare/v1.4.0...v1.4.1) (2026-05-26)
 
 
