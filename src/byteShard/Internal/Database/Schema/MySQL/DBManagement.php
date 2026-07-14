@@ -249,7 +249,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             }
             // map function defaults (unquoted in information_schema, literals are quoted) to the enum,
             // unknown function defaults become RawDefault
-            if (is_string($default) && $default !== '' && !str_starts_with($default, '\'')) {
+            if (is_string($default) && !str_starts_with($default, '\'')) {
                 $mapped = Column::mapLegacyDefault($default);
                 if ($mapped !== null) {
                     $default = $mapped;
