@@ -70,7 +70,22 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
     {
         $columns      = [];
         $primary_keys = $this->getPrimaryKeyColumns($table);
-        $tmp          = Database::getArray('SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+
+        // table collation, used to detect columns with a deviating collation
+        $tableCollation = '';
+        $tableRecord    = Database::getArray('SELECT `TABLE_COLLATION` FROM `information_schema`.`TABLES` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+        if (!empty($tableRecord) && isset($tableRecord[0]->TABLE_COLLATION)) {
+            $tableCollation = (string)$tableRecord[0]->TABLE_COLLATION;
+        }
+
+        // column level check constraints (MariaDB stores them with CONSTRAINT_NAME = column name)
+        $checkClauses = [];
+        $checkRecords = Database::getArray('SELECT `CONSTRAINT_NAME`, `CHECK_CLAUSE` FROM `information_schema`.`CHECK_CONSTRAINTS` WHERE `CONSTRAINT_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+        foreach ($checkRecords as $checkRecord) {
+            $checkClauses[$checkRecord->CONSTRAINT_NAME] = $checkRecord->CHECK_CLAUSE;
+        }
+
+        $tmp = Database::getArray('SELECT * FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `TABLE_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
         foreach ($tmp as $val) {
             switch ($val->DATA_TYPE) {
                 case 'tinyint': //boolean
@@ -230,7 +245,14 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                         break;
                 }
             }
-            $columns[$val->COLUMN_NAME] = new Column(
+            // generated (computed) columns: MariaDB sets IS_GENERATED='ALWAYS', MySQL sets EXTRA='... GENERATED'
+            $isGenerated = (isset($val->IS_GENERATED) && strtoupper((string)$val->IS_GENERATED) === 'ALWAYS')
+                || stripos($val->EXTRA, 'generated') !== false;
+            if ($isGenerated === true) {
+                // generated columns cannot have default values
+                $default = null;
+            }
+            $column = new Column(
                 $val->COLUMN_NAME,
                 $val->COLUMN_NAME,
                 $type,
@@ -240,6 +262,26 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                 stripos($val->EXTRA, 'auto_increment') !== false,
                 $default
             );
+            if (!empty($val->COLLATION_NAME)) {
+                $column->setCollate($val->COLLATION_NAME);
+                $column->setTableCollate($tableCollation);
+                if ($val->COLLATION_NAME !== $tableCollation && !empty($val->CHARACTER_SET_NAME)) {
+                    $column->setCharacterSet($val->CHARACTER_SET_NAME);
+                }
+            }
+            if (stripos($val->EXTRA, 'on update current_timestamp') !== false) {
+                $column->setOnUpdate('current_timestamp()');
+            }
+            if ($isGenerated === true && !empty($val->GENERATION_EXPRESSION)) {
+                $column->setGeneratedAs(
+                    (string)$val->GENERATION_EXPRESSION,
+                    stripos($val->EXTRA, 'stored') !== false || stripos($val->EXTRA, 'persistent') !== false
+                );
+            }
+            if (array_key_exists($val->COLUMN_NAME, $checkClauses)) {
+                $column->setCheck($checkClauses[$val->COLUMN_NAME]);
+            }
+            $columns[$val->COLUMN_NAME] = $column;
         }
         return $columns;
     }

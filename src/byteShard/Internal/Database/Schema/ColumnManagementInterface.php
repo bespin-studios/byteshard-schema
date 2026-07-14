@@ -6,6 +6,8 @@
 
 namespace byteShard\Internal\Database\Schema;
 
+use byteShard\Database\Enum\DefaultValue;
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum\DB\ColumnType;
 
 interface ColumnManagementInterface
@@ -16,7 +18,7 @@ interface ColumnManagementInterface
 
     public function getColumnDefinition(): string;
 
-    public function getDefault(): int|string|null;
+    public function getDefault(): int|string|null|DefaultValue|RawDefault;
 
     public function getDropColumnStatement(): string;
 

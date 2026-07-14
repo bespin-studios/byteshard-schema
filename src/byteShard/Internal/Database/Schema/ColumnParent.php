@@ -6,6 +6,8 @@
 
 namespace byteShard\Internal\Database\Schema;
 
+use byteShard\Database\Enum\DefaultValue;
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 
 /**
@@ -14,17 +16,17 @@ use byteShard\Enum;
  */
 abstract class ColumnParent implements ColumnManagementInterface
 {
-    private string             $comment;
-    private string|int|null    $default;
-    private bool               $identity;
-    private bool               $isNullable;
-    private int|string|null    $length;
-    private string             $name;
-    private string             $newName;
-    private bool               $primary;
-    private Enum\DB\ColumnType $type;
+    private string                                     $comment;
+    private string|int|null|DefaultValue|RawDefault    $default;
+    private bool                                       $identity;
+    private bool                                       $isNullable;
+    private int|string|null                            $length;
+    private string                                     $name;
+    private string                                     $newName;
+    private bool                                       $primary;
+    private Enum\DB\ColumnType                         $type;
 
-    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null|DefaultValue|RawDefault $default = null, string $comment = '')
     {
         $this->type       = $type;
         $this->name       = $name;
@@ -42,7 +44,7 @@ abstract class ColumnParent implements ColumnManagementInterface
         return $this->comment;
     }
 
-    public function getDefault(): int|string|null
+    public function getDefault(): int|string|null|DefaultValue|RawDefault
     {
         return $this->default;
     }
@@ -105,13 +107,28 @@ abstract class ColumnParent implements ColumnManagementInterface
         if ($column->getLength() !== $this->getLength()) {
             $notIdentical |= (1 << 3);
         }
-        if ($column->getDefault() !== $this->getDefault()) {
+        if ($this->normalizeDefault($column->getDefault()) !== $this->normalizeDefault($this->getDefault())) {
             $notIdentical |= (1 << 4);
         }
         if ($column->isPrimary() !== $this->isPrimary()) {
             $notIdentical |= (1 << 5);
         }
         return $notIdentical > 0;
+    }
+
+    /**
+     * map defaults to a scalar so they can be compared with !==
+     * (two RawDefault instances with the same expression must be considered equal)
+     */
+    protected function normalizeDefault(int|string|null|DefaultValue|RawDefault $default): int|string|null
+    {
+        if ($default instanceof DefaultValue) {
+            return 'fn:'.$default->value;
+        }
+        if ($default instanceof RawDefault) {
+            return 'raw:'.strtolower(str_replace([' ', '`'], '', $default->getExpression()));
+        }
+        return $default;
     }
 
     abstract public function getColumnDefinition(): string;

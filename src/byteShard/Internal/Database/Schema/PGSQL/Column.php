@@ -6,6 +6,8 @@
 
 namespace byteShard\Internal\Database\Schema\PGSQL;
 
+use byteShard\Database\Enum\DefaultValue;
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 use byteShard\Internal\Database\Schema\ColumnParent;
 
@@ -13,7 +15,7 @@ class Column extends ColumnParent
 {
     private string $collate = 'en_US.utf8';
 
-    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null $default = null, string $comment = '')
+    public function __construct(string $name, string $newName = '', Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, bool $isNullable = true, bool $primary = false, bool $identity = false, string|int|null|DefaultValue|RawDefault $default = null, string $comment = '')
     {
         switch ($type) {
             case Enum\DB\ColumnType::SMALLINT:
@@ -51,6 +53,10 @@ class Column extends ColumnParent
                 $type = Enum\DB\ColumnType::BYTEA;
                 break;
         }
+        // legacy support: map magic strings like 'now()' or 'current_timestamp' to the DefaultValue enum
+        if (is_string($default)) {
+            $default = DefaultValue::tryFromExpression($default) ?? $default;
+        }
         parent::__construct(strtolower($name), strtolower($newName), $type, $length, $isNullable, $primary, $identity, $default, $comment);
     }
 
@@ -86,8 +92,7 @@ class Column extends ColumnParent
             } else {
                 $prefix = 'DEFAULT ';
             }
-
-            $statements[] = $prefix.(Enum\DB\ColumnType::is_string($this->getType()) ? '\''.$this->getDefault().'\' ' : $this->getDefault());
+            $statements[] = $prefix.$this->getDefaultClause();
         } else {
             $statements[] = $update === true && !$this->isIdentity() ? 'DROP DEFAULT' : '';
         }
@@ -98,6 +103,29 @@ class Column extends ColumnParent
         } else {
             return $statement.' '.implode(' ', $statements);
         }
+    }
+
+    /**
+     * translate the default to PGSQL syntax
+     */
+    private function getDefaultClause(): string
+    {
+        $default = $this->getDefault();
+        if ($default instanceof DefaultValue) {
+            return match ($default) {
+                DefaultValue::CURRENT_TIMESTAMP => 'CURRENT_TIMESTAMP',
+                DefaultValue::CURRENT_DATE      => 'CURRENT_DATE',
+                DefaultValue::CURRENT_TIME      => 'CURRENT_TIME',
+                DefaultValue::UUID              => 'gen_random_uuid()',
+            };
+        }
+        if ($default instanceof RawDefault) {
+            return $default->getExpression();
+        }
+        if (Enum\DB\ColumnType::is_string($this->getType())) {
+            return '\''.$default.'\'';
+        }
+        return strval($default);
     }
 
     public function getDropColumnStatement(): string
@@ -224,12 +252,14 @@ class Column extends ColumnParent
         } else {
             $schema .= ',false';
         }
-        if ($this->getDefault() !== null) {
-            if ($this->getDefault() === '') {
-                $schema .= ', "'.$this->getDefault().'"';
-            } else {
-                $schema .= ', '.$this->getDefault();
-            }
+        $default = $this->getDefault();
+        if ($default instanceof DefaultValue) {
+            $schema .= ', DefaultValue::'.$default->name;
+        } elseif ($default instanceof RawDefault) {
+            $schema .= ', new RawDefault('.var_export($default->getExpression(), true).')';
+        } elseif ($default !== null) {
+            // quote string defaults so the generated PHP code is valid
+            $schema .= ', '.(is_string($default) ? var_export($default, true) : $default);
         } else {
             $schema .= ',null';
         }

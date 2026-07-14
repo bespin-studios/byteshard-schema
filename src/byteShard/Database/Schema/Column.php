@@ -6,6 +6,8 @@
 
 namespace byteShard\Database\Schema;
 
+use byteShard\Database\Enum\DefaultValue;
+use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 
 /**
@@ -14,20 +16,23 @@ use byteShard\Enum;
  */
 class Column
 {
-    private string             $comment = '';
-    private null|string|int    $default;
-    private bool               $identity;
-    private ?bool              $isNullable;
-    private null|int|string    $length;
-    private string             $name;
-    private string             $newName = '';
-    private bool               $primary;
-    private Enum\DB\ColumnType $type;
-    private ?string            $collate = null;
-    private string             $charset = '';
-    private string             $check   = '';
+    private string                                  $comment         = '';
+    private null|string|int|DefaultValue|RawDefault $default;
+    private bool                                    $identity;
+    private ?bool                                   $isNullable;
+    private null|int|string                         $length;
+    private string                                  $name;
+    private string                                  $newName         = '';
+    private bool                                    $primary;
+    private Enum\DB\ColumnType                      $type;
+    private ?string                                 $collate         = null;
+    private string                                  $charset         = '';
+    private string                                  $check           = '';
+    private ?string                                 $onUpdate        = null;
+    private ?string                                 $generatedAs     = null;
+    private bool                                    $generatedStored = false;
 
-    public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, ?bool $nullable = null, bool $primary = false, bool $identity = false, string|int|null $default = null)
+    public function __construct(string $name, Enum\DB\ColumnType $type = Enum\DB\ColumnType::INT, int|string|null $length = null, ?bool $nullable = null, bool $primary = false, bool $identity = false, string|int|null|DefaultValue|RawDefault $default = null)
     {
         $this->type       = $type;
         $this->isNullable = $nullable;
@@ -43,7 +48,7 @@ class Column
         return $this->comment;
     }
 
-    public function getDefault(): int|string|null
+    public function getDefault(): int|string|null|DefaultValue|RawDefault
     {
         return $this->default;
     }
@@ -103,7 +108,7 @@ class Column
         return $this->collate;
     }
 
-    public function setCollate(string $collate): self
+    public function setCollate(string $collate): static
     {
         $this->collate = $collate;
         return $this;
@@ -120,6 +125,11 @@ class Column
         return $this->charset;
     }
 
+    /**
+     * Column level check constraint.
+     * Pass the bare expression, e.g. setCheck('json_valid(`raw`)').
+     * Surrounding parentheses are added automatically if missing.
+     */
     public function setCheck(string $check): static
     {
         $this->check = $check;
@@ -129,5 +139,44 @@ class Column
     public function getCheck(): string
     {
         return $this->check;
+    }
+
+    /**
+     * e.g. setOnUpdate('current_timestamp()') results in
+     * ... DEFAULT current_timestamp() ON UPDATE current_timestamp()
+     */
+    public function setOnUpdate(string $expression): static
+    {
+        $this->onUpdate = $expression;
+        return $this;
+    }
+
+    public function getOnUpdate(): ?string
+    {
+        return $this->onUpdate;
+    }
+
+    /**
+     * Generated (computed) column, e.g.
+     * setGeneratedAs("if(`status` = 'OPEN',1,NULL)") results in
+     * ... GENERATED ALWAYS AS (if(`status` = 'OPEN',1,NULL)) VIRTUAL
+     * Pass $stored = true for a STORED/PERSISTENT column.
+     * Generated columns cannot have NOT NULL, DEFAULT, AUTO_INCREMENT or ON UPDATE.
+     */
+    public function setGeneratedAs(string $expression, bool $stored = false): static
+    {
+        $this->generatedAs     = $expression;
+        $this->generatedStored = $stored;
+        return $this;
+    }
+
+    public function getGeneratedAs(): ?string
+    {
+        return $this->generatedAs;
+    }
+
+    public function isGeneratedStored(): bool
+    {
+        return $this->generatedStored;
     }
 }
