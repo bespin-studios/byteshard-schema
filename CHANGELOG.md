@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/bespin-studios/byteshard-schema/compare/v1.6.0...v1.6.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* mysql does not have the TABLE_NAME column in CHECK_CONSTRAINTS, this is just a mariadb anomaly ([d43cd29](https://github.com/bespin-studios/byteshard-schema/commit/d43cd29aebb28030457989c58e786fa5aae23e89))
+
 # [1.6.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.5.0...v1.6.0) (2026-07-14)
 
 
