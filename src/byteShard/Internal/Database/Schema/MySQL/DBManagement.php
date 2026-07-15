@@ -80,8 +80,11 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
         }
 
         // column level check constraints (MariaDB stores them with CONSTRAINT_NAME = column name)
+        // Note: MariaDB's information_schema.CHECK_CONSTRAINTS has a TABLE_NAME column (MariaDB-specific
+        // extension), but standard MySQL's CHECK_CONSTRAINTS does not. TABLE_CONSTRAINTS.TABLE_NAME is
+        // present on both engines, so join through it instead of filtering CHECK_CONSTRAINTS directly.
         $checkClauses = [];
-        $checkRecords = Database::getArray('SELECT `CONSTRAINT_NAME`, `CHECK_CLAUSE` FROM `information_schema`.`CHECK_CONSTRAINTS` WHERE `CONSTRAINT_SCHEMA`=\''.$this->getTableSchema().'\' AND `TABLE_NAME`=\''.$table->getName().'\'');
+        $checkRecords = Database::getArray('SELECT `cc`.`CONSTRAINT_NAME`, `cc`.`CHECK_CLAUSE` FROM `information_schema`.`CHECK_CONSTRAINTS` `cc` INNER JOIN `information_schema`.`TABLE_CONSTRAINTS` `tc` ON `tc`.`CONSTRAINT_SCHEMA`=`cc`.`CONSTRAINT_SCHEMA` AND `tc`.`CONSTRAINT_NAME`=`cc`.`CONSTRAINT_NAME` WHERE `tc`.`CONSTRAINT_SCHEMA`=\''.$this->getTableSchema().'\' AND `tc`.`TABLE_NAME`=\''.$table->getName().'\' AND `tc`.`CONSTRAINT_TYPE`=\'CHECK\'');
         foreach ($checkRecords as $checkRecord) {
             $checkClauses[$checkRecord->CONSTRAINT_NAME] = $checkRecord->CHECK_CLAUSE;
         }
