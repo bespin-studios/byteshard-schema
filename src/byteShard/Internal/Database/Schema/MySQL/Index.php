@@ -6,19 +6,26 @@
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
+use byteShard\Enum\DB\IndexType;
 use byteShard\Internal\Database\Schema\IndexParent;
 
 class Index extends IndexParent
 {
     public function getAddIndexStatement(): string
     {
-        if (!empty($this->getIndexColumns())) {
-            if ($this->isUnique()){
-                return 'ADD UNIQUE INDEX `'.$this->getName().'` (`'.implode('`,`', $this->getIndexColumns()).'`)';
-            }
-            return 'ADD INDEX `'.$this->getName().'` (`'.implode('`,`', $this->getIndexColumns()).'`)';
+        $indexColumns = $this->getIndexColumns();
+        if (empty($indexColumns)) {
+            return '';
         }
-        return '';
+
+        $cols   = '`'.implode('`,`', $indexColumns).'`';
+        $name   = $this->getName();
+        $unique = $this->isUnique() ? 'UNIQUE ' : '';
+
+        return match ($this->getIndexType()) {
+            IndexType::FULLTEXT => 'ADD FULLTEXT INDEX `'.$name.'` ('.$cols.')',
+            default => 'ADD '.$unique.'INDEX `'.$name.'` ('.$cols.')',
+        };
     }
 
     public function getDropIndexStatement(): string

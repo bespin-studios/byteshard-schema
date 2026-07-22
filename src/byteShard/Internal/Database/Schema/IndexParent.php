@@ -6,6 +6,8 @@
 
 namespace byteShard\Internal\Database\Schema;
 
+use byteShard\Enum\DB\IndexType;
+
 abstract class IndexParent implements IndexManagementInterface
 {
     private string $indexName;
@@ -13,8 +15,8 @@ abstract class IndexParent implements IndexManagementInterface
     /**
      * @var array<string>
      */
-    private array  $columns = [];
-    private string $type    = '';
+    private array     $columns   = [];
+    private IndexType $indexType = IndexType::BTREE;
     private bool   $unique  = false;
 
     public function __construct(string $indexName, ColumnManagementInterface ...$columns)
@@ -40,12 +42,16 @@ abstract class IndexParent implements IndexManagementInterface
 
     public function getType(): string
     {
-        return $this->type;
+        return $this->indexType->value;
     }
 
     public function setType(string $type): static
     {
-        $this->type = $type;
+        $indexType = IndexType::tryFrom(strtolower($type));
+        if ($indexType === null) {
+            throw new \InvalidArgumentException('Invalid index type: '.$type);
+        }
+        $this->indexType = $indexType;
         return $this;
     }
 
@@ -58,5 +64,16 @@ abstract class IndexParent implements IndexManagementInterface
     {
         $this->unique = $unique;
         return $this;
+    }
+
+    public function setIndexType(IndexType $indexType): static
+    {
+        $this->indexType = $indexType;
+        return $this;
+    }
+
+    public function getIndexType(): IndexType
+    {
+        return $this->indexType;
     }
 }

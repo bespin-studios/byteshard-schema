@@ -31,13 +31,17 @@ class State
 
     public function addTable(Table $table): Table
     {
-        $this->steps[$this->version][] = $table;
+        if ($this->version !== null) {
+            $this->steps[$this->version][] = $table;
+        }
         return $table;
     }
 
     public function addStatement(Statement $statement): static
     {
-        $this->steps[$this->version][] = $statement;
+        if ($this->version !== null) {
+            $this->steps[$this->version][] = $statement;
+        }
         return $this;
     }
 

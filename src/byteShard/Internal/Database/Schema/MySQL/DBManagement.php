@@ -12,6 +12,7 @@ namespace byteShard\Internal\Database\Schema\MySQL;
 use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 use byteShard\Database;
+use byteShard\Enum\DB\IndexType;
 use byteShard\Environment;
 use byteShard\Exception;
 use byteShard\Internal\Database\BaseConnection;
@@ -262,7 +263,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             }
             // generated (computed) columns: MariaDB sets IS_GENERATED='ALWAYS', MySQL sets EXTRA='... GENERATED'
             $isGenerated = strtoupper(strval($val->IS_GENERATED ?? '')) === 'ALWAYS'
-                || str_contains($extra, 'generated');
+                           || str_contains($extra, 'generated');
             if ($isGenerated === true) {
                 // generated columns cannot have default values
                 $default = null;
@@ -314,7 +315,8 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
         foreach ($indexRecords as $index) {
             if (!array_key_exists($index->Key_name, $indices)) {
                 $indices[$index->Key_name]         = new stdClass();
-                $indices[$index->Key_name]->Unique = $index->Non_unique === '1';
+                $indices[$index->Key_name]->Unique = $index->Non_unique === 0;
+                $indices[$index->Key_name]->Type   = IndexType::tryFrom(strtolower($index->Index_type)) ?? throw new Exception('Unknown index type: '.$index->Index_type);
             }
             $indices[$index->Key_name]->IndexName                     = $index->Key_name;
             $indices[$index->Key_name]->Columns[$index->Seq_in_index] = new Column($index->Column_name);
@@ -326,6 +328,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                 if ($index->Unique === true) {
                     $indexObject->setUnique();
                 }
+                $indexObject->setIndexType($index->Type);
                 $result[$indexObject->getName()] = $indexObject;
             }
         }

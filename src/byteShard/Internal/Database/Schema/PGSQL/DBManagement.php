@@ -3,6 +3,7 @@
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
  */
+
 /** @noinspection SqlResolve */
 /** @noinspection SqlNoDataSourceInspection */
 
@@ -10,6 +11,7 @@ namespace byteShard\Internal\Database\Schema\PGSQL;
 
 use byteShard\Database;
 use byteShard\Enum;
+use byteShard\Enum\DB\IndexType;
 use byteShard\Exception;
 use byteShard\Internal\Database\BaseConnection;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
@@ -205,26 +207,31 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
         $indices    = [];
         $indicesTmp = [];
 
-        $query = 'SELECT t.relname as table_name, a.attname as column_name,  ix.relname as index_name, am.amname as index_type, a.attnum as seq_in_index,
-indisunique as is_unique, indisprimary as is_primary FROM pg_index i JOIN pg_class t ON t.oid = i.indrelid
-JOIN  pg_attribute a on  a.attrelid = t.oid JOIN pg_class ix ON ix.oid = i.indexrelid JOIN pg_am am on am.oid = t.relam JOIN pg_namespace AS namespace ON ix.relnamespace = namespace.OID
-WHERE a.attnum = ANY(i.indkey) and  t.relname =:table and i.indisprimary != true and namespace.nspname =:schema;';
+        $query = 'SELECT t.relname as table_name, a.attname as column_name, ix.relname as index_name,
+                    am.amname as index_type, a.attnum as seq_in_index, indisunique as is_unique, indisprimary as is_primary
+                    FROM pg_index i
+                    JOIN pg_class t ON t.oid = i.indrelid
+                    JOIN pg_attribute a ON a.attrelid = t.oid
+                    JOIN pg_class ix ON ix.oid = i.indexrelid
+                    JOIN pg_am am ON am.oid = ix.relam
+                    JOIN pg_namespace AS namespace ON ix.relnamespace = namespace.OID
+                    WHERE a.attnum = ANY(i.indkey) AND t.relname = :table AND i.indisprimary != true AND namespace.nspname = :schema;';
 
         $tmp = Database::getArray($query, ['table' => $table, 'schema' => $this->tableSchema]);
         foreach ($tmp as $val) {
             if (is_string($val->index_name)) {
                 $indicesTmp[$val->index_name]['Columns'][$val->seq_in_index] = new Column($val->column_name);
-                $indicesTmp[$val->index_name]['Index_type']                  = $val->index_type;
-                $indicesTmp[$val->index_name]['unique']                      = $val->is_unique;
+                $indicesTmp[$val->index_name]['Index_type']                  = IndexType::tryFrom(strtolower($val->index_type)) ?? throw new Exception('Unknown index type '.$val->index_type);
+                $indicesTmp[$val->index_name]['unique']                      = (bool)$val->is_unique;
             }
         }
         foreach ($indicesTmp as $indexName => $index) {
             $columns = $index['Columns'];
             ksort($columns);
             $indices[$indexName] = new Index($table->getName(), $indexName, ...$columns);
-            if (is_string($index['Index_type'])) {
-                $indices[$indexName]->setType($index['Index_type']);
-                $indices[$indexName]->setUnique($index['unique']);
+            $indices[$indexName]->setIndexType($index['Index_type']);
+            if ($index['unique'] === true) {
+                $indices[$indexName]->setUnique();
             }
         }
         return $indices;

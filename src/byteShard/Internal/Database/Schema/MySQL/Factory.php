@@ -59,7 +59,8 @@ class Factory
             $columns[] = new Column($column);
         }
         $mysqlIndex = new Index($index->getName(), ...$columns);
-        $mysqlIndex->setType($index->getType());
+        $mysqlIndex->setIndexType($index->getIndexType());
+        $mysqlIndex->setUnique($index->isUnique());
         return $mysqlIndex;
     }
 
