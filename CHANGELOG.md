@@ -1,3 +1,19 @@
+# [1.7.0](https://github.com/bespin-studios/byteshard-schema/compare/v1.6.1...v1.7.0) (2026-07-22)
+
+
+### Bug Fixes
+
+* adjust postgres to use the IndexType as well ([5045335](https://github.com/bespin-studios/byteshard-schema/commit/50453352294672ce704ef05362a5c9b58da33035))
+* describe table unique was the other way round and index type missing ([94cf897](https://github.com/bespin-studios/byteshard-schema/commit/94cf897779b1806999d7bf60f73e0d805cc59715))
+* fail if the database uses an index type which is not supported ([62004d0](https://github.com/bespin-studios/byteshard-schema/commit/62004d0412526c0ca06052a2a685b47e300bfa5f))
+* only add index type if not default ([fece773](https://github.com/bespin-studios/byteshard-schema/commit/fece77350f45a62363238f57406911f2c5cdb9a3))
+* unnecessary quotes ([3664001](https://github.com/bespin-studios/byteshard-schema/commit/3664001a0ea6f4c308d6c8dc7ec0e61cada0f4bd))
+
+
+### Features
+
+* add new index type and deprecated old setType ([8f15e9a](https://github.com/bespin-studios/byteshard-schema/commit/8f15e9a504c2f3fc53ee50b7a25f966d53a2b71f))
+
 ## [1.6.1](https://github.com/bespin-studios/byteshard-schema/compare/v1.6.0...v1.6.1) (2026-07-15)
 
 
