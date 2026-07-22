@@ -268,7 +268,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                     $schema[] = $indexVariableName.'->setUnique();';
                 }
                 if ($index->getIndexType() !== null) {
-                    $schema[] = $indexVariableName.'->setIndexType(\'IndexType::'.$index->getIndexType()->name.'\');';
+                    $schema[] = $indexVariableName.'->setIndexType(IndexType::'.$index->getIndexType()->name.');';
                 }
             }
         }
