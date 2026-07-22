@@ -1,5 +1,6 @@
 <?php
 /** @noinspection SqlResolve */
+
 /** @noinspection SqlNoDataSourceInspection */
 /**
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
@@ -8,8 +9,10 @@
 
 namespace byteShard\Internal\Database\Schema\PGSQL;
 
+use byteShard\Enum\DB\IndexType;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\IndexParent;
+use InvalidArgumentException;
 
 class Index extends IndexParent
 {
@@ -24,14 +27,26 @@ class Index extends IndexParent
 
     public function getAddIndexStatement(): string
     {
-        if (!empty($this->getIndexColumns())) {
-            if ($this->isUnique()) {
-                return 'CREATE UNIQUE INDEX '.$this->getName().' ON '.$this->getTableName().' ('.implode(',', $this->getIndexColumns()).')';
-            } else {
-                return 'CREATE INDEX '.$this->getName().' ON '.$this->getTableName().' ('.implode(',', $this->getIndexColumns()).')';
-            }
+        $indexColumns = $this->getIndexColumns();
+        if (empty($indexColumns)) {
+            return '';
         }
-        return '';
+
+        if (in_array($this->getIndexType(), [IndexType::FULLTEXT], true)) {
+            throw new InvalidArgumentException(
+                $this->getIndexType()->value.' indexes require additional setup on Postgres and aren\'t auto-generated.'
+            );
+        }
+
+        $cols   = implode(',', $indexColumns);
+        $name   = $this->getName();
+        $unique = $this->isUnique() ? 'UNIQUE ' : '';
+
+        $using = match ($this->getIndexType()) {
+            default => 'btree',
+        };
+
+        return 'CREATE '.$unique.'INDEX '.$name.' ON '.$this->getTableName().' USING '.$using.' ('.$cols.')';
     }
 
     public function getDropIndexStatement(): string

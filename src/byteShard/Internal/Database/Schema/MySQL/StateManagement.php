@@ -162,11 +162,11 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                 // table in target schema doesn't have an identity column but the current schema has one -> remove it
                 $this->addComment('Remove Identity from Column '.$currentIdentityColumn->getName());
                 $this->dbManagement->execute($table->getDropIdentityStatement($this->dbManagement->getPrimaryKeyName($table), $targetSchemaPrimaryKeyColumns, $currentIdentityColumn));
-            } elseif ($targetIdentityColumn !== null && array_key_exists($targetIdentityColumn->getName(), $currentSchemaColumns) && $currentIdentityColumn !== null) {
+            } elseif ($targetIdentityColumn !== null && array_key_exists($targetIdentityColumn->getName(), $currentSchemaColumns)) {
                 // new identity column already exists, modify it
                 $this->addComment('Move Identity from '.$currentIdentityColumn->getName().' to '.$targetIdentityColumn->getName());
                 $this->dbManagement->execute($table->getMoveIdentityStatement($this->dbManagement->getPrimaryKeyName($table), $targetSchemaPrimaryKeyColumns, $targetSchemaColumns[$currentIdentityColumn->getName()], $targetIdentityColumn));
-            } elseif ($targetIdentityColumn !== null && $currentIdentityColumn !== null) {
+            } elseif ($currentIdentityColumn !== null) {
                 // new identity column doesn't exist yet, create it
                 $this->addComment('Change current Identity Column ('.$currentIdentityColumn->getName().'), add new Identity Column ('.$targetIdentityColumn->getName().') and update Primary Key');
                 $this->dbManagement->execute($table->getAddIdentityStatement($this->dbManagement->getPrimaryKeyName($table), $targetSchemaPrimaryKeyColumns, $targetIdentityColumn, $targetSchemaColumns[$currentIdentityColumn->getName()]));

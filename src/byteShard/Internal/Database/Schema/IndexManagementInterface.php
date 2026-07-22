@@ -6,6 +6,8 @@
 
 namespace byteShard\Internal\Database\Schema;
 
+use byteShard\Enum\DB\IndexType;
+
 interface IndexManagementInterface
 {
     public function getAddIndexStatement(): string;
@@ -22,6 +24,10 @@ interface IndexManagementInterface
     public function getType(): string;
 
     public function setType(string $type): static;
+
+    public function setIndexType(IndexType $indexType): static;
+
+    public function getIndexType(): IndexType;
 
     public function setUnique(bool $unique = true): static;
 

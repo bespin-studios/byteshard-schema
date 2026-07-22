@@ -3,11 +3,13 @@
  * @copyright  Copyright (c) 2009 Bespin Studios GmbH
  * @license    See LICENSE file that is distributed with this source code
  */
+
 /** @noinspection SqlResolve */
 /** @noinspection SqlNoDataSourceInspection */
 
 namespace byteShard\Internal\Database\Schema\MySQL;
 
+use byteShard\Enum\DB\IndexType;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
 use byteShard\Internal\Database\Schema\IndexManagementInterface;
@@ -51,42 +53,54 @@ class Table extends TableParent
 
     public function getAddIndexStatement(IndexManagementInterface $index): string
     {
-        return 'ALTER TABLE `'.$this->getName().'` '.$index->getAddIndexStatement();
+        if (!empty($index->getIndexColumns())) {
+            return $index->getAddIndexStatement();
+        } else {
+            return '';
+        }
     }
 
     public function getCreateTableStatement(): string
     {
         $columns = $this->getColumns();
-        if (!empty($columns)) {
-            $items          = [];
-            $primaryColumns = [];
-            foreach ($columns as $column) {
-                $items[] = $column->getColumnDefinition();
-                if ($column->isPrimary() === true) {
-                    $primaryColumns[] = '`'.$column->getName().'`';
-                }
-            }
-            if (!empty($primaryColumns)) {
-                $items[] = 'PRIMARY KEY ('.implode(',', $primaryColumns).')';
-            }
-            $indices = $this->getIndices();
-            foreach ($indices as $index) {
-                $indexColumns = $index->getIndexColumns();
-                if (!empty($indexColumns)) {
-                    $items[] = match (strtolower($index->getType())) {
-                        'unique' => 'UNIQUE KEY `'.$index->getName().'` (`'.implode('`,`', $indexColumns).'`)',
-                        default  => 'KEY `'.$index->getName().'` (`'.implode('`,`', $indexColumns).'`)',
-                    };
-                }
-            }
-            $command = 'CREATE TABLE `'.$this->getName().'` (';
-            $command .= PHP_EOL.implode(','.PHP_EOL, $items);
-            $command .= PHP_EOL.')';
-            $command .= ' ENGINE='.$this->engine.' DEFAULT CHARSET='.$this->charset.' COLLATE='.$this->collate;
-            $command .= $this->getComment() !== '' ? " COMMENT='".$this->getComment()."'" : '';
-            return $command;
+        if (empty($columns)) {
+            return '';
         }
-        return '';
+
+        $items          = [];
+        $primaryColumns = [];
+        foreach ($columns as $column) {
+            $items[] = $column->getColumnDefinition();
+            if ($column->isPrimary() === true) {
+                $primaryColumns[] = '`'.$column->getName().'`';
+            }
+        }
+        if (!empty($primaryColumns)) {
+            $items[] = 'PRIMARY KEY ('.implode(',', $primaryColumns).')';
+        }
+
+        foreach ($this->getIndices() as $index) {
+            $indexColumns = $index->getIndexColumns();
+            if (empty($indexColumns)) {
+                continue;
+            }
+
+            $cols = '`'.implode('`,`', $indexColumns).'`';
+            $name = $index->getName();
+
+            $items[] = match ($index->getIndexType()) {
+                IndexType::FULLTEXT => 'FULLTEXT KEY `'.$name.'` ('.$cols.')',
+                default => ($index->isUnique() ? 'UNIQUE ' : '').'KEY `'.$name.'` ('.$cols.')',
+            };
+        }
+
+        $command = 'CREATE TABLE `'.$this->getName().'` (';
+        $command .= PHP_EOL.implode(','.PHP_EOL, $items);
+        $command .= PHP_EOL.')';
+        $command .= ' ENGINE='.$this->engine.' DEFAULT CHARSET='.$this->charset.' COLLATE='.$this->collate;
+        $command .= $this->getComment() !== '' ? " COMMENT='".$this->getComment()."'" : '';
+
+        return $command;
     }
 
     public function getDropColumnStatement(ColumnManagementInterface $column): string

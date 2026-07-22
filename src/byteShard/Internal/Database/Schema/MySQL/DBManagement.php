@@ -12,6 +12,7 @@ namespace byteShard\Internal\Database\Schema\MySQL;
 use byteShard\Database\Enum\RawDefault;
 use byteShard\Enum;
 use byteShard\Database;
+use byteShard\Enum\DB\IndexType;
 use byteShard\Environment;
 use byteShard\Exception;
 use byteShard\Internal\Database\BaseConnection;
@@ -262,7 +263,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             }
             // generated (computed) columns: MariaDB sets IS_GENERATED='ALWAYS', MySQL sets EXTRA='... GENERATED'
             $isGenerated = strtoupper(strval($val->IS_GENERATED ?? '')) === 'ALWAYS'
-                || str_contains($extra, 'generated');
+                           || str_contains($extra, 'generated');
             if ($isGenerated === true) {
                 // generated columns cannot have default values
                 $default = null;

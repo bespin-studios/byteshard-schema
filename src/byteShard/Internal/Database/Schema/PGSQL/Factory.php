@@ -40,7 +40,7 @@ class Factory
             $columns[] = new Column($column);
         }
         $pgsqlIndex = new Index($tableName, $index->getName(), ...$columns);
-        $pgsqlIndex->setType($index->getType());
+        $pgsqlIndex->setIndexType($index->getIndexType());
         $pgsqlIndex->setUnique($index->isUnique());
         return $pgsqlIndex;
     }
