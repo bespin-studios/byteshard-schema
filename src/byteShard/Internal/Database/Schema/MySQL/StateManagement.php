@@ -8,6 +8,7 @@ namespace byteShard\Internal\Database\Schema\MySQL;
 
 use byteShard\Database\Schema\Statement;
 use byteShard\Database\Schema\Table;
+use byteShard\Enum\DB\IndexType;
 use byteShard\Exception;
 use byteShard\Internal\Database\Schema\ColumnManagementInterface;
 use byteShard\Internal\Database\Schema\ForeignKeyInterface;
@@ -267,7 +268,7 @@ class StateManagement extends \byteShard\Internal\Database\Schema\StateManagemen
                 if ($index->isUnique()) {
                     $schema[] = $indexVariableName.'->setUnique();';
                 }
-                if ($index->getIndexType() !== null) {
+                if ($index->getIndexType() !== IndexType::BTREE) { // btree is the default
                     $schema[] = $indexVariableName.'->setIndexType(IndexType::'.$index->getIndexType()->name.');';
                 }
             }
