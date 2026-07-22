@@ -229,10 +229,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             $columns = $index['Columns'];
             ksort($columns);
             $indices[$indexName] = new Index($table->getName(), $indexName, ...$columns);
-
-            if ($index['Index_type'] !== IndexType::BTREE) {
-                $indices[$indexName]->setIndexType($index['Index_type']);
-            }
+            $indices[$indexName]->setIndexType($index['Index_type']);
             if ($index['unique'] === true) {
                 $indices[$indexName]->setUnique();
             }

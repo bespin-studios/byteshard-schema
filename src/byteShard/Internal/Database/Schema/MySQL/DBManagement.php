@@ -316,7 +316,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
             if (!array_key_exists($index->Key_name, $indices)) {
                 $indices[$index->Key_name]         = new stdClass();
                 $indices[$index->Key_name]->Unique = $index->Non_unique === 0;
-                $indices[$index->Key_name]->Type   = IndexType::tryFrom(strtolower($index->Index_type));
+                $indices[$index->Key_name]->Type   = IndexType::tryFrom(strtolower($index->Index_type)) ?? throw new Exception('Unknown index type: '.$index->Index_type);
             }
             $indices[$index->Key_name]->IndexName                     = $index->Key_name;
             $indices[$index->Key_name]->Columns[$index->Seq_in_index] = new Column($index->Column_name);
@@ -328,9 +328,7 @@ class DBManagement extends DBManagementParent implements DBManagementInterface
                 if ($index->Unique === true) {
                     $indexObject->setUnique();
                 }
-                if ($index->Type !== null) {
-                    $indexObject->setIndexType($index->Type);
-                }
+                $indexObject->setIndexType($index->Type);
                 $result[$indexObject->getName()] = $indexObject;
             }
         }
