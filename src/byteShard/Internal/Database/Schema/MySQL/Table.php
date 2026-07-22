@@ -54,7 +54,7 @@ class Table extends TableParent
     public function getAddIndexStatement(IndexManagementInterface $index): string
     {
         if (!empty($index->getIndexColumns())) {
-            return $index->getAddIndexStatement();
+            return 'ALTER TABLE `'.$this->getName().'` '.$index->getAddIndexStatement();
         } else {
             return '';
         }
